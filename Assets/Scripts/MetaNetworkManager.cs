@@ -26,7 +26,8 @@ public class MetaNetworkManager : MonoBehaviour {
 	}
 
 	public enum MessageId : ushort {
-	    UUID = 100,
+		Secret = 100,
+		UUID,
 		ChatMessage,
 	    ServerList,
 	    StartServer,
@@ -61,6 +62,7 @@ public class MetaNetworkManager : MonoBehaviour {
 	public GameObject ChatText;
 	public GameObject JoinServerContent;
 	public GameObject ServerButton;
+	public List<ushort> blacklistedClients;
 
     public Server Server { get; private set; }
     public Client Client { get; private set; }
@@ -83,6 +85,7 @@ public class MetaNetworkManager : MonoBehaviour {
 		usedGUIDs = new List<string>();
 #if UNITY_EDITOR
 	    if (HostMainServer) {
+			blacklistedClients = new();
 			if (File.Exists(Application.persistentDataPath + "/usedGUIDs.json")) {
 				usedGUIDs = JsonUtility.FromJson<List<string>>(File.ReadAllText(Application.persistentDataPath + "/usedGUIDs.json"));
 			} else {
@@ -104,8 +107,16 @@ public class MetaNetworkManager : MonoBehaviour {
 		Client.Update();
     }
 
+	[MessageHandler((ushort)MessageId.Secret)]
+	private static void ProcessSecret(ushort sender, Message message) {
+	    if (message.GetString().Equals(File.ReadAllText(Application.dataPath + "/secret.dat"))) {
+			Camera.main.GetComponent<MetaNetworkManager>().blacklistedClients.Remove(sender);
+		}
+	}
+
 	[MessageHandler((ushort)MessageId.UUID)]
 	private static void ProcessUUIDRequest(ushort sender, Message message) {
+		if (Camera.main.GetComponent<MetaNetworkManager>().blacklistedClients.Contains(sender)) return;
 	    message = Message.Create(MessageSendMode.Reliable, MessageId.UUID);
 		string guid;
 		do {
@@ -149,6 +160,7 @@ public class MetaNetworkManager : MonoBehaviour {
 
 	[MessageHandler((ushort)MessageId.ChatMessage)]
 	private static void ProcessChatMessage(ushort sender, Message message) {
+		if (Camera.main.GetComponent<MetaNetworkManager>().blacklistedClients.Contains(sender)) return;
 		Camera.main.GetComponent<MetaNetworkManager>().Server.SendToAll(message, sender);
 	}
 
@@ -178,16 +190,19 @@ public class MetaNetworkManager : MonoBehaviour {
 
 	[MessageHandler((ushort)MessageId.StartServer)]
 	private static void ProcessServerStart(ushort sender, Message message) {
+		if (Camera.main.GetComponent<MetaNetworkManager>().blacklistedClients.Contains(sender)) return;
 	    Camera.main.GetComponent<MetaNetworkManager>().servers.Add(new ServerData(message.GetString(), message.GetString(), new MainScript.Version(message.GetByte(), message.GetByte(), message.GetByte(), (MainScript.Version.SubversionType) message.GetByte(), message.GetByte()), message.GetString(), sender));
 	}
 
 	[MessageHandler((ushort)MessageId.StopServer)]
 	private static void ProcessServerStop(ushort sender, Message message) {
+		if (Camera.main.GetComponent<MetaNetworkManager>().blacklistedClients.Contains(sender)) return;
 	    Camera.main.GetComponent<MetaNetworkManager>().servers.RemoveAll(s => s.clientId == sender);
 	}
 
 	[MessageHandler((ushort)MessageId.ServerList)]
 	private static void ProcessServerListRequest(ushort sender, Message message) {
+		if (Camera.main.GetComponent<MetaNetworkManager>().blacklistedClients.Contains(sender)) return;
 	    message = Message.Create(MessageSendMode.Reliable, MessageId.ServerList);
 	    message.AddInt(Camera.main.GetComponent<MetaNetworkManager>().servers.Count);
 	    for (int i = 0; i < Camera.main.GetComponent<MetaNetworkManager>().servers.Count; i++) {
@@ -259,6 +274,7 @@ public class MetaNetworkManager : MonoBehaviour {
 
     private void DidConnect(object sender, EventArgs e) {
 	    MainScript.PrintMessage("Connected to The Main Server!");
+		Client.Send(Message.Create(MessageSendMode.Reliable, MessageId.Secret).AddString(Application.dataPath + "/secret.dat"));
 	    GetComponent<MenuScript>().MainMenuCanvas.SetActive(true);
 	    if (GetComponent<MainScript>().saveFile == null) {
 	        Client.Send(Message.Create(MessageSendMode.Reliable, MessageId.UUID));
@@ -275,10 +291,12 @@ public class MetaNetworkManager : MonoBehaviour {
 	}
 
     private void PlayerJoined(object sender, ServerConnectedEventArgs e) {
+		blacklistedClients.Add(e.Client.Id);
 	}
 
 	public void PlayerLeft(object sender, ServerDisconnectedEventArgs e) {
 	    servers.RemoveAll(s => s.clientId == e.Client.Id);
+		blacklistedClients.Remove(e.Client.Id);
 	}
 
     private void DidDisconnect(object sender, DisconnectedEventArgs e) {
