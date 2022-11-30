@@ -324,13 +324,18 @@ public class NetworkManager : MonoBehaviour {
 
 	[MessageHandler((ushort)MessageId.Join)]
 	private static void ProcessPlayerJoin(Message message) {
-		message.AddString(Camera.main.GetComponent<MainScript>().saveFile.uuid);
-		Camera.main.GetComponent<NetworkManager>().Client.Send(message);
+		if (message.GetByte() == 0) {
+			message.AddString(Camera.main.GetComponent<MainScript>().saveFile.uuid);
+			message.AddString(Camera.main.GetComponent<MainScript>().saveFile.username);
+			Camera.main.GetComponent<NetworkManager>().Client.Send(message);
+		} else {}
 	}
 
 	[MessageHandler((ushort)MessageId.Join)]
 	private static void ProcessPlayerJoin(ushort sender, Message message) {
 		string uuid = message.GetString();
+		MainScript.Map.Entity.Stickman entity = new MainScript.Map.Entity.Stickman(new Vector2(25000, 25000), 100f, message.GetString(), new AI.Player());
+		Camera.main.GetComponent<MainScript>().serverMap.entities.Add(uuid, entity);
 		Camera.main.GetComponent<NetworkManager>().playerEntities.Add(sender, uuid);
 	}
 

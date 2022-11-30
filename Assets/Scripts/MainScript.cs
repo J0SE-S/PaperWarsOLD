@@ -187,6 +187,15 @@ public class MainScript : MonoBehaviour {
 					(ai as AI.Stickman).entity = this;
 				}
 
+				public Stickman(Vector2 newPosition, float newHealth, string newDisplayName, AI newAi) {
+					position = newPosition;
+					position.z = 0f;
+					Health = newHealth;
+					displayName = newDisplayName;
+					ai = newAi;
+					(ai as AI.Player).entity = this;
+				}
+
 				public override void Visualize() {
 					visualization = Instantiate(Camera.main.GetComponent<MainScript>().Entities[GetEntityType("stickman")], new Vector3(position.x, position.y, position.z), new Quaternion(0, 0, 0, 1));
 					Camera.main.GetComponent<MainScript>().LoadedEntities.Add(visualization);
