@@ -63,6 +63,7 @@ public class MetaNetworkManager : MonoBehaviour {
 	public GameObject JoinServerContent;
 	public GameObject ServerButton;
 	public List<ushort> blacklistedClients;
+	public string secret;
 
     public Server Server { get; private set; }
     public Client Client { get; private set; }
@@ -72,6 +73,8 @@ public class MetaNetworkManager : MonoBehaviour {
     }
 
     public void Start3() {
+		secret = Resources.Load<TextAsset>("secret").text;
+
         Server = new Server();
         Server.ClientConnected += PlayerJoined;
 	    Server.ClientDisconnected += PlayerLeft;
@@ -109,9 +112,20 @@ public class MetaNetworkManager : MonoBehaviour {
 
 	[MessageHandler((ushort)MessageId.Secret)]
 	private static void ProcessSecret(ushort sender, Message message) {
-	    if (message.GetString() == File.ReadAllText(Application.dataPath + "/secret.dat")) {
+	    if (message.GetString() == Camera.main.GetComponent<MetaNetworkManager>().secret) {
 			Camera.main.GetComponent<MetaNetworkManager>().blacklistedClients.Remove(sender);
+		} else {
+			Camera.main.GetComponent<MetaNetworkManager>().Server.Send(message, sender);
 		}
+	}
+
+	[MessageHandler((ushort)MessageId.Secret)]
+	private static void EmergencyShutdown(Message message) {
+#if UNITY_EDITOR
+		UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
 	}
 
 	[MessageHandler((ushort)MessageId.UUID)]
@@ -274,7 +288,7 @@ public class MetaNetworkManager : MonoBehaviour {
 
     private void DidConnect(object sender, EventArgs e) {
 	    MainScript.PrintMessage("Connected to The Main Server!");
-		Client.Send(Message.Create(MessageSendMode.Reliable, MessageId.Secret).AddString(File.ReadAllText(Application.dataPath + "/secret.dat")));
+		Client.Send(Message.Create(MessageSendMode.Reliable, MessageId.Secret).AddString(Camera.main.GetComponent<MetaNetworkManager>().secret));
 	    GetComponent<MenuScript>().MainMenuCanvas.SetActive(true);
 	    if (GetComponent<MainScript>().saveFile == null) {
 	        Client.Send(Message.Create(MessageSendMode.Reliable, MessageId.UUID));

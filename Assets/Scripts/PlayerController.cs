@@ -30,11 +30,15 @@ public class PlayerController : MonoBehaviour {
             transform.position = new Vector3(-10000, -10000, -10);
 			GetComponent<MainScript>().PlayerWaypoint.SetActive(false);
         }
+        if (Player == gameObject) {
+        }
      }
 
     void FixedUpdate() {
         if (Player != null) {
    	        Player.GetComponent<Rigidbody2D>().velocity = new Vector2(horizontal * runSpeed, vertical * runSpeed);
+            if (Player == gameObject) {
+            }
         }
     }
 }
