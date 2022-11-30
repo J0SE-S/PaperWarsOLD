@@ -109,7 +109,7 @@ public class MetaNetworkManager : MonoBehaviour {
 
 	[MessageHandler((ushort)MessageId.Secret)]
 	private static void ProcessSecret(ushort sender, Message message) {
-	    if (message.GetString().Equals(File.ReadAllText(Application.dataPath + "/secret.dat"))) {
+	    if (message.GetString() == File.ReadAllText(Application.dataPath + "/secret.dat")) {
 			Camera.main.GetComponent<MetaNetworkManager>().blacklistedClients.Remove(sender);
 		}
 	}
@@ -274,7 +274,7 @@ public class MetaNetworkManager : MonoBehaviour {
 
     private void DidConnect(object sender, EventArgs e) {
 	    MainScript.PrintMessage("Connected to The Main Server!");
-		Client.Send(Message.Create(MessageSendMode.Reliable, MessageId.Secret).AddString(Application.dataPath + "/secret.dat"));
+		Client.Send(Message.Create(MessageSendMode.Reliable, MessageId.Secret).AddString(File.ReadAllText(Application.dataPath + "/secret.dat")));
 	    GetComponent<MenuScript>().MainMenuCanvas.SetActive(true);
 	    if (GetComponent<MainScript>().saveFile == null) {
 	        Client.Send(Message.Create(MessageSendMode.Reliable, MessageId.UUID));
