@@ -250,7 +250,7 @@ public class NetworkManager : MonoBehaviour {
 			Server.Send(message, id);
 			yield return new WaitForSeconds(0.01F);
 	    }
-		Server.Send(Message.Create(MessageSendMode.Reliable, MessageId.Join), id);
+		Server.Send(Message.Create(MessageSendMode.Reliable, MessageId.Join).AddByte(0), id);
 	}
 
     private void OtherPlayerLeft(object sender, ClientDisconnectedEventArgs e) {}
@@ -258,10 +258,10 @@ public class NetworkManager : MonoBehaviour {
     private void DidDisconnect(object sender, DisconnectedEventArgs e) {
 	    GetComponent<MainScript>().nonSolidTilemap.ClearAllTiles();
 	    GetComponent<MainScript>().solidTilemap.ClearAllTiles();
-		foreach (GameObject entity in GetComponent<MainScript>().LoadedEntities) {
+		foreach (GameObject entity in GetComponent<MainScript>().LoadedEntities.Values) {
 			Destroy(entity);
 		}
-		GetComponent<MainScript>().LoadedEntities = new List<GameObject>();
+		GetComponent<MainScript>().LoadedEntities = new();
 	    if (serverReconnectionAttempts > 5) {
 	        MainScript.PrintMessage("Disconnected.");
 	        GameCanvas.SetActive(false);
@@ -325,10 +325,13 @@ public class NetworkManager : MonoBehaviour {
 	[MessageHandler((ushort)MessageId.Join)]
 	private static void ProcessPlayerJoin(Message message) {
 		if (message.GetByte() == 0) {
-			message.AddString(Camera.main.GetComponent<MainScript>().saveFile.uuid);
-			message.AddString(Camera.main.GetComponent<MainScript>().saveFile.username);
-			Camera.main.GetComponent<NetworkManager>().Client.Send(message);
-		} else {}
+			Camera.main.GetComponent<MainScript>().buildingPlacementBlueprint = Instantiate(Camera.main.GetComponent<MainScript>().Entities[5]);
+			Camera.main.GetComponent<MainScript>().buildingPlacementMode = true;
+			Camera.main.GetComponent<MainScript>().buildingPlacementType = 0;
+			Camera.main.GetComponent<PlayerController>().Player = Camera.main.gameObject;
+		} else {
+			Camera.main.GetComponent<PlayerController>().Player = Camera.main.GetComponent<MainScript>().LoadedEntities[Camera.main.GetComponent<MainScript>().saveFile.uuid];
+		}
 	}
 
 	[MessageHandler((ushort)MessageId.Join)]
@@ -337,6 +340,11 @@ public class NetworkManager : MonoBehaviour {
 		MainScript.Map.Entity.Stickman entity = new MainScript.Map.Entity.Stickman(new Vector2(25000, 25000), 100f, message.GetString(), new AI.Player());
 		Camera.main.GetComponent<MainScript>().serverMap.entities.Add(uuid, entity);
 		Camera.main.GetComponent<NetworkManager>().playerEntities.Add(sender, uuid);
+		Message message1 = Message.Create(MessageSendMode.Reliable, MessageId.SpawnEntity);
+		message1.AddFloat(entity.Position.x);
+		message1.AddFloat(entity.Position.y);
+		Camera.main.GetComponent<NetworkManager>().Server.Send(message1, sender);
+		Camera.main.GetComponent<NetworkManager>().Server.Send(Message.Create(MessageSendMode.Reliable, MessageId.Join).AddByte(1), sender);
 	}
 
 	[MessageHandler((ushort)MessageId.ChunkData)]

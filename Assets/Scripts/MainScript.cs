@@ -137,12 +137,12 @@ public class MainScript : MonoBehaviour {
 
 				public override void Visualize() {
 					visualization = Instantiate(Camera.main.GetComponent<MainScript>().Entities[GetEntityType("tree")], new Vector3(position.x, position.y, position.z), new Quaternion(0, 0, 0, 1));
-					Camera.main.GetComponent<MainScript>().LoadedEntities.Add(visualization);
+					Camera.main.GetComponent<MainScript>().LoadedEntities.Add(uuid, visualization);
 				}
 
 				public override void ServerVisualize() {
 					visualization = Instantiate(Camera.main.GetComponent<MainScript>().ServerEntities[GetEntityType("tree")], new Vector3(position.x-50000, position.y, position.z), new Quaternion(0, 0, 0, 1));
-					Camera.main.GetComponent<MainScript>().ServerLoadedEntities.Add(visualization);
+					Camera.main.GetComponent<MainScript>().ServerLoadedEntities.Add(uuid, visualization);
 				}
 			}
 
@@ -159,7 +159,7 @@ public class MainScript : MonoBehaviour {
 
 				public override void Visualize() {
 					visualization = Instantiate(Camera.main.GetComponent<MainScript>().Entities[GetEntityType("flower")+color], new Vector3(position.x, position.y, position.z), new Quaternion(0, 0, 0, 1));
-					Camera.main.GetComponent<MainScript>().LoadedEntities.Add(visualization);
+					Camera.main.GetComponent<MainScript>().LoadedEntities.Add(uuid, visualization);
 				}
 
 				public override void ServerVisualize() {}
@@ -198,13 +198,13 @@ public class MainScript : MonoBehaviour {
 
 				public override void Visualize() {
 					visualization = Instantiate(Camera.main.GetComponent<MainScript>().Entities[GetEntityType("stickman")], new Vector3(position.x, position.y, position.z), new Quaternion(0, 0, 0, 1));
-					Camera.main.GetComponent<MainScript>().LoadedEntities.Add(visualization);
+					Camera.main.GetComponent<MainScript>().LoadedEntities.Add(uuid, visualization);
 					visualization.transform.GetChild(0).GetChild(0).GetComponent<TMP_Text>().text = displayName;
 				}
 
 				public override void ServerVisualize() {
 					visualization = Instantiate(Camera.main.GetComponent<MainScript>().ServerEntities[GetEntityType("stickman")], new Vector3(position.x-50000, position.y, position.z), new Quaternion(0, 0, 0, 1));
-					Camera.main.GetComponent<MainScript>().ServerLoadedEntities.Add(visualization);
+					Camera.main.GetComponent<MainScript>().ServerLoadedEntities.Add(uuid, visualization);
 				}
 			}
 
@@ -232,12 +232,12 @@ public class MainScript : MonoBehaviour {
 
 				public override void Visualize() {
 					visualization = Instantiate(Camera.main.GetComponent<MainScript>().Entities[GetEntityType("airship")], new Vector3(position.x, position.y, position.z), new Quaternion(0, 0, 0, 1));
-					Camera.main.GetComponent<MainScript>().LoadedEntities.Add(visualization);
+					Camera.main.GetComponent<MainScript>().LoadedEntities.Add(uuid, visualization);
 				}
 
 				public override void ServerVisualize() {
 					visualization = Instantiate(Camera.main.GetComponent<MainScript>().ServerEntities[GetEntityType("airship")], new Vector3(position.x-50000, position.y, position.z), new Quaternion(0, 0, 0, 1));
-					Camera.main.GetComponent<MainScript>().ServerLoadedEntities.Add(visualization);
+					Camera.main.GetComponent<MainScript>().ServerLoadedEntities.Add(uuid, visualization);
 				}
 			}
 
@@ -257,6 +257,7 @@ public class MainScript : MonoBehaviour {
 				}
 			}
 			public GameObject visualization;
+			public string uuid;
 
 			public abstract void Visualize();
 			public abstract void ServerVisualize();
@@ -341,8 +342,8 @@ public class MainScript : MonoBehaviour {
     public UnityEngine.Tilemaps.Tile[] tiles;
     public GameObject[] Entities;
 	public GameObject[] ServerEntities;
-	public List<GameObject> LoadedEntities;
-	public List<GameObject> ServerLoadedEntities;
+	public Dictionary<string, GameObject> LoadedEntities;
+	public Dictionary<string, GameObject> ServerLoadedEntities;
 	public GameObject PlayerWaypoint;
 	public GameObject AirshipWaypoint;
 	public TMP_InputField SendMessageField;
@@ -374,7 +375,7 @@ public class MainScript : MonoBehaviour {
 		if (File.Exists(Application.persistentDataPath + "/save_file.paperwars-save")) {
 			saveFile = JsonUtility.FromJson<SaveFile>(Base64.Decode(File.ReadAllText(Application.persistentDataPath+"/save_file.paperwars-save")));
 		}
-		LoadedEntities = new List<GameObject>();
+		LoadedEntities = new Dictionary<string, GameObject>();
 		GetComponent<NetworkManager>().Start2();
 		SendMessageField.onSubmit.AddListener(SendMessageToServer);
 		versionDisplay.text = "v" + currentVersion;
@@ -386,7 +387,7 @@ public class MainScript : MonoBehaviour {
 		if (Camera.main.ScreenToWorldPoint(Input.mousePosition).x >= 0 && Camera.main.ScreenToWorldPoint(Input.mousePosition).y >= 0 && Camera.main.ScreenToWorldPoint(Input.mousePosition).x <= 50000 && Camera.main.ScreenToWorldPoint(Input.mousePosition).y <= 50000) {
 			//Camera.main.ScreenToWorldPoint(Input.mousePosition).x;
 		}
-		foreach (GameObject entity in LoadedEntities) {
+		foreach (GameObject entity in LoadedEntities.Values) {
 			if (Vector3.Distance(transform.position, entity.transform.position) <= 1000) {
 				entity.SetActive(true);
 			} else {
