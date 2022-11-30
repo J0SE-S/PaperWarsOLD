@@ -4247,6 +4247,7 @@ MonoBehaviour:
   JoinServerContent: {fileID: 1711665798}
   ServerButton: {fileID: 5834612567485069439, guid: 5b4144b1a417c41838c97915ae61f7ff, type: 3}
   blacklistedClients: 
+  secret: 
 --- !u!114 &519420037
 MonoBehaviour:
   m_ObjectHideFlags: 0
