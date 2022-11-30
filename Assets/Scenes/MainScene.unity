@@ -4246,6 +4246,7 @@ MonoBehaviour:
   ChatText: {fileID: 5219684679771344045, guid: a20803fd439a84f18ae676596f13ec97, type: 3}
   JoinServerContent: {fileID: 1711665798}
   ServerButton: {fileID: 5834612567485069439, guid: 5b4144b1a417c41838c97915ae61f7ff, type: 3}
+  blacklistedClients: 
 --- !u!114 &519420037
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8379,7 +8380,7 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 1108295763}
   m_Father: {fileID: 0}
