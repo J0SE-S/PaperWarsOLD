@@ -129,20 +129,21 @@ public class MainScript : MonoBehaviour {
 		public abstract class Entity {
 			[Serializable]
 			public class Tree : Entity {
-				public Tree(Vector2 newPosition) {
+				public Tree(Vector2 newPosition, string newUUID) {
 					position = newPosition;
 					position.z = -0.1f;
+					uuid = newUUID;
 					ai = new AI.Null();
 				}
 
 				public override void Visualize() {
 					visualization = Instantiate(Camera.main.GetComponent<MainScript>().Entities[GetEntityType("tree")], new Vector3(position.x, position.y, position.z), new Quaternion(0, 0, 0, 1));
-					Camera.main.GetComponent<MainScript>().LoadedEntities.Add(visualization);
+					Camera.main.GetComponent<MainScript>().LoadedEntities.Add(uuid, visualization);
 				}
 
 				public override void ServerVisualize() {
 					visualization = Instantiate(Camera.main.GetComponent<MainScript>().ServerEntities[GetEntityType("tree")], new Vector3(position.x-50000, position.y, position.z), new Quaternion(0, 0, 0, 1));
-					Camera.main.GetComponent<MainScript>().ServerLoadedEntities.Add(visualization);
+					Camera.main.GetComponent<MainScript>().ServerLoadedEntities.Add(uuid, visualization);
 				}
 			}
 
@@ -150,16 +151,17 @@ public class MainScript : MonoBehaviour {
 			public class Flower : Entity {
 				public byte color;
 
-				public Flower(Vector2 newPosition, byte newColor) {
+				public Flower(Vector2 newPosition, byte newColor, string newUUID) {
 					position = newPosition;
 					position.z = 0.1f;
 					color = newColor;
+					uuid = newUUID;
 					ai = new AI.Null();
 				}
 
 				public override void Visualize() {
 					visualization = Instantiate(Camera.main.GetComponent<MainScript>().Entities[GetEntityType("flower")+color], new Vector3(position.x, position.y, position.z), new Quaternion(0, 0, 0, 1));
-					Camera.main.GetComponent<MainScript>().LoadedEntities.Add(visualization);
+					Camera.main.GetComponent<MainScript>().LoadedEntities.Add(uuid, visualization);
 				}
 
 				public override void ServerVisualize() {}
@@ -170,41 +172,44 @@ public class MainScript : MonoBehaviour {
 				public float Health {get; set;}
 				public string displayName;
 
-				public Stickman(Vector2 newPosition, string newDisplayName) {
+				public Stickman(Vector2 newPosition, string newDisplayName, string newUUID) {
 					position = newPosition;
 					position.z = 0f;
 					displayName = newDisplayName;
+					uuid = newUUID;
 					ai = new AI.Stickman();
 					(ai as AI.Stickman).entity = this;
 				}
 
-				public Stickman(Vector2 newPosition, float newHealth, string newDisplayName) {
+				public Stickman(Vector2 newPosition, float newHealth, string newDisplayName, string newUUID) {
 					position = newPosition;
 					position.z = 0f;
 					Health = newHealth;
 					displayName = newDisplayName;
+					uuid = newUUID;
 					ai = new AI.Stickman();
 					(ai as AI.Stickman).entity = this;
 				}
 
-				public Stickman(Vector2 newPosition, float newHealth, string newDisplayName, AI newAi) {
+				public Stickman(Vector2 newPosition, float newHealth, string newDisplayName, string newUUID, AI newAi) {
 					position = newPosition;
 					position.z = 0f;
 					Health = newHealth;
 					displayName = newDisplayName;
 					ai = newAi;
+					uuid = newUUID;
 					(ai as AI.Player).entity = this;
 				}
 
 				public override void Visualize() {
 					visualization = Instantiate(Camera.main.GetComponent<MainScript>().Entities[GetEntityType("stickman")], new Vector3(position.x, position.y, position.z), new Quaternion(0, 0, 0, 1));
-					Camera.main.GetComponent<MainScript>().LoadedEntities.Add(visualization);
+					Camera.main.GetComponent<MainScript>().LoadedEntities.Add(uuid, visualization);
 					visualization.transform.GetChild(0).GetChild(0).GetComponent<TMP_Text>().text = displayName;
 				}
 
 				public override void ServerVisualize() {
 					visualization = Instantiate(Camera.main.GetComponent<MainScript>().ServerEntities[GetEntityType("stickman")], new Vector3(position.x-50000, position.y, position.z), new Quaternion(0, 0, 0, 1));
-					Camera.main.GetComponent<MainScript>().ServerLoadedEntities.Add(visualization);
+					Camera.main.GetComponent<MainScript>().ServerLoadedEntities.Add(uuid, visualization);
 				}
 			}
 
@@ -222,22 +227,23 @@ public class MainScript : MonoBehaviour {
 				public float Width {get; set;}
 				public float Height {get; set;}
 
-				public Airship(Vector2 newPosition) {
+				public Airship(Vector2 newPosition, string newUUID) {
 					position = newPosition;
 					position.z = -0.3f;
 					Width = 50;
 					Height = 50;
+					uuid = newUUID;
 					ai = new AI.Null();
 				}
 
 				public override void Visualize() {
 					visualization = Instantiate(Camera.main.GetComponent<MainScript>().Entities[GetEntityType("airship")], new Vector3(position.x, position.y, position.z), new Quaternion(0, 0, 0, 1));
-					Camera.main.GetComponent<MainScript>().LoadedEntities.Add(visualization);
+					Camera.main.GetComponent<MainScript>().LoadedEntities.Add(uuid, visualization);
 				}
 
 				public override void ServerVisualize() {
 					visualization = Instantiate(Camera.main.GetComponent<MainScript>().ServerEntities[GetEntityType("airship")], new Vector3(position.x-50000, position.y, position.z), new Quaternion(0, 0, 0, 1));
-					Camera.main.GetComponent<MainScript>().ServerLoadedEntities.Add(visualization);
+					Camera.main.GetComponent<MainScript>().ServerLoadedEntities.Add(uuid, visualization);
 				}
 			}
 
@@ -257,6 +263,7 @@ public class MainScript : MonoBehaviour {
 				}
 			}
 			public GameObject visualization;
+			public string uuid;
 
 			public abstract void Visualize();
 			public abstract void ServerVisualize();
@@ -341,8 +348,8 @@ public class MainScript : MonoBehaviour {
     public UnityEngine.Tilemaps.Tile[] tiles;
     public GameObject[] Entities;
 	public GameObject[] ServerEntities;
-	public List<GameObject> LoadedEntities;
-	public List<GameObject> ServerLoadedEntities;
+	public Dictionary<string, GameObject> LoadedEntities;
+	public Dictionary<string, GameObject> ServerLoadedEntities;
 	public GameObject PlayerWaypoint;
 	public GameObject AirshipWaypoint;
 	public TMP_InputField SendMessageField;
@@ -374,7 +381,7 @@ public class MainScript : MonoBehaviour {
 		if (File.Exists(Application.persistentDataPath + "/save_file.paperwars-save")) {
 			saveFile = JsonUtility.FromJson<SaveFile>(Base64.Decode(File.ReadAllText(Application.persistentDataPath+"/save_file.paperwars-save")));
 		}
-		LoadedEntities = new List<GameObject>();
+		LoadedEntities = new Dictionary<string, GameObject>();
 		GetComponent<NetworkManager>().Start2();
 		SendMessageField.onSubmit.AddListener(SendMessageToServer);
 		versionDisplay.text = "v" + currentVersion;
@@ -386,7 +393,7 @@ public class MainScript : MonoBehaviour {
 		if (Camera.main.ScreenToWorldPoint(Input.mousePosition).x >= 0 && Camera.main.ScreenToWorldPoint(Input.mousePosition).y >= 0 && Camera.main.ScreenToWorldPoint(Input.mousePosition).x <= 50000 && Camera.main.ScreenToWorldPoint(Input.mousePosition).y <= 50000) {
 			//Camera.main.ScreenToWorldPoint(Input.mousePosition).x;
 		}
-		foreach (GameObject entity in LoadedEntities) {
+		foreach (GameObject entity in LoadedEntities.Values) {
 			if (Vector3.Distance(transform.position, entity.transform.position) <= 1000) {
 				entity.SetActive(true);
 			} else {
@@ -528,20 +535,21 @@ public class MainScript : MonoBehaviour {
 		FastNoiseLite biomeMap = GenerateNoiseMap(seed+2, 1, 0.003f);
 		for (int x = 0; x < 1000; x++) {
 			for (int y = 0; y < 1000; y++) {
+				string uuid = System.Guid.NewGuid().ToString();
 				if (biomeMap.GetNoise(x, y) <= 0) {
 					if (IsGrass(map.tileMap(x, y))) {
 						if (UnityEngine.Random.Range(0f, 1f) <= treeDensity / 5f) {
-							map.entities.Add(System.Guid.NewGuid().ToString(), new Map.Entity.Tree(new Vector2(x*50+UnityEngine.Random.Range(-0.5f, 0.5f), y*50+UnityEngine.Random.Range(-0.5f, 0.5f))));
+							map.entities.Add(uuid, new Map.Entity.Tree(new Vector2(x*50+UnityEngine.Random.Range(-0.5f, 0.5f), y*50+UnityEngine.Random.Range(-0.5f, 0.5f)), uuid));
 						} else if (UnityEngine.Random.Range(0f, 1f) <= flowerDensity) {
-							map.entities.Add(System.Guid.NewGuid().ToString(), new Map.Entity.Flower(new Vector2(x*50+UnityEngine.Random.Range(-0.5f, 0.5f), y*50+UnityEngine.Random.Range(-0.5f, 0.5f)), (byte) UnityEngine.Random.Range(0,3)));
+							map.entities.Add(uuid, new Map.Entity.Flower(new Vector2(x*50+UnityEngine.Random.Range(-0.5f, 0.5f), y*50+UnityEngine.Random.Range(-0.5f, 0.5f)), (byte) UnityEngine.Random.Range(0,3), uuid));
 						}
 					}
 				} else {
 					if (IsGrass(map.tileMap(x, y))) {
 						if (UnityEngine.Random.Range(0f, 1f) <= treeDensity) {
-							map.entities.Add(System.Guid.NewGuid().ToString(), new Map.Entity.Tree(new Vector2(x*50+UnityEngine.Random.Range(-0.5f, 0.5f), y*50+UnityEngine.Random.Range(-0.5f, 0.5f))));
+							map.entities.Add(uuid, new Map.Entity.Tree(new Vector2(x*50+UnityEngine.Random.Range(-0.5f, 0.5f), y*50+UnityEngine.Random.Range(-0.5f, 0.5f)), uuid));
 						} else if (UnityEngine.Random.Range(0f, 1f) <= flowerDensity / 5f) {
-							map.entities.Add(System.Guid.NewGuid().ToString(), new Map.Entity.Flower(new Vector2(x*50+UnityEngine.Random.Range(-0.5f, 0.5f), y*50+UnityEngine.Random.Range(-0.5f, 0.5f)), (byte) UnityEngine.Random.Range(0,3)));
+							map.entities.Add(uuid, new Map.Entity.Flower(new Vector2(x*50+UnityEngine.Random.Range(-0.5f, 0.5f), y*50+UnityEngine.Random.Range(-0.5f, 0.5f)), (byte) UnityEngine.Random.Range(0,3), uuid));
 						}
 					}
 				}
