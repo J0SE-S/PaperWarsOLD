@@ -132,6 +132,7 @@ public class NetworkManager : MonoBehaviour {
 	}
 
 	private IEnumerator StartHost2() {
+		GetComponent<MainScript>().ServerLoadedEntities = new();
 		for (int row = 0; row < 40; row++) {
             for (int column = 0; column < 40; column++) {
 				byte[,] chunk = new byte[25, 25];
@@ -152,8 +153,8 @@ public class NetworkManager : MonoBehaviour {
 		hostedServerHostName = GetComponent<MainScript>().saveFile.username;
 		hostedServerVersion = GetComponent<MainScript>().currentVersion.ToString();
 		GetComponent<MenuScript>().HostServerButton.interactable = false;
-		Server.Start(port, maxPlayers);
 		MainScript.PrintMessage("Server Started!");
+		playerEntities = new();
 		if (GetComponent<MainScript>().settings.joinServerOnHost) {
 			JoinGame("127.0.0.1");
 		} else {
@@ -166,7 +167,7 @@ public class NetworkManager : MonoBehaviour {
 		Server.Start(port, maxPlayers);
 		MainScript.PrintMessage("Server Started!");
 		GetComponent<MetaNetworkManager>().SendStartServerData(hostedServerName, hostedServerHostName, new WebClient().DownloadString("http://icanhazip.com").Replace("\r\n", "").Replace("\n", "").Replace("\r", ""));
-		GetComponent<MetaNetworkManager>().SendChatMessage(GetComponent<MainScript>().saveFile.username + " has started the server \"" + hostedServerName + " | Hosted by: " + hostedServerHostName + " (" + hostedServerVersion + ")" + "\".");
+		GetComponent<MetaNetworkManager>().SendChatMessage(GetComponent<MainScript>().saveFile.username + " has started the server \"" + hostedServerName + " | Hosted by: " + hostedServerHostName + " (v" + hostedServerVersion + ")" + "\".");
 	}
 
     public void JoinGame(string ip) {
@@ -187,7 +188,7 @@ public class NetworkManager : MonoBehaviour {
 	    MainScript.PrintMessage("Joined Server!");
 	    GameCanvas.SetActive(true);
 		GetComponent<MenuScript>().MessageSending.SetActive(true);
-		GetComponent<MetaNetworkManager>().SendChatMessage(GetComponent<MainScript>().saveFile.username + " has connected to server \"" + connectedServerName + " | Hosted by: " + connectedServerHostName + " (" + connectedServerVersion + ")" + "\".");
+		GetComponent<MetaNetworkManager>().SendChatMessage(GetComponent<MainScript>().saveFile.username + " has connected to server \"" + connectedServerName + " | Hosted by: " + connectedServerHostName + " (v" + connectedServerVersion + ")" + "\".");
     }
 
     private void FailedToConnect(object sender, EventArgs e) {
@@ -221,6 +222,7 @@ public class NetworkManager : MonoBehaviour {
 		foreach (MainScript.Map.Entity entity in GetComponent<MainScript>().serverMap.entities.Values) {
 	    	Message message = Message.Create(MessageSendMode.Reliable, MessageId.SpawnEntity);
 			string type = entity.GetType().FullName;
+			message.AddString(entity.uuid);
 			switch (type) {
 				case "MainScript+Map+Entity+Tree":
 					message.AddByte(0);
@@ -271,7 +273,7 @@ public class NetworkManager : MonoBehaviour {
 			serverReconnectionAttempts++;
 			JoinGame(connectedIp);
 	    }
-		GetComponent<MetaNetworkManager>().SendChatMessage(GetComponent<MainScript>().saveFile.username + " has disconnected from server \"" + connectedServerName + " | Hosted by: " + connectedServerHostName + "\".");
+		GetComponent<MetaNetworkManager>().SendChatMessage(GetComponent<MainScript>().saveFile.username + " has disconnected from server \"" + connectedServerName + " | Hosted by: " + connectedServerHostName + " (v" + connectedServerVersion + ")" + "\".");
 	}
 
 	private static Color32 ToColor(byte color) {
@@ -337,13 +339,14 @@ public class NetworkManager : MonoBehaviour {
 	[MessageHandler((ushort)MessageId.Join)]
 	private static void ProcessPlayerJoin(ushort sender, Message message) {
 		string uuid = message.GetString();
-		MainScript.Map.Entity.Stickman entity = new MainScript.Map.Entity.Stickman(new Vector2(25000, 25000), 100f, message.GetString(), new AI.Player());
+		MainScript.Map.Entity.Stickman entity = new MainScript.Map.Entity.Stickman(new Vector2(25000, 25000), 100f, message.GetString(), uuid, new AI.Player());
 		Camera.main.GetComponent<MainScript>().serverMap.entities.Add(uuid, entity);
 		Camera.main.GetComponent<NetworkManager>().playerEntities.Add(sender, uuid);
 		Message message1 = Message.Create(MessageSendMode.Reliable, MessageId.SpawnEntity);
 		message1.AddFloat(entity.Position.x);
 		message1.AddFloat(entity.Position.y);
 		Camera.main.GetComponent<NetworkManager>().Server.Send(message1, sender);
+		Debug.Log("fdsfgdg");
 		Camera.main.GetComponent<NetworkManager>().Server.Send(Message.Create(MessageSendMode.Reliable, MessageId.Join).AddByte(1), sender);
 	}
 
@@ -371,21 +374,22 @@ public class NetworkManager : MonoBehaviour {
 
 	[MessageHandler((ushort)MessageId.SpawnEntity)]
 	private static void ProcessEntityData(Message message) {
+		string uuid = message.GetString();
 		byte type = message.GetByte();
 		switch (type) {
 			case 0:
-				new MainScript.Map.Entity.Tree(new Vector2(message.GetFloat(), message.GetFloat())).Visualize();
+				new MainScript.Map.Entity.Tree(new Vector2(message.GetFloat(), message.GetFloat()), uuid).Visualize();
 				break;
 			case 1:
 			case 2:
 			case 3:
-				new MainScript.Map.Entity.Flower(new Vector2(message.GetFloat(), message.GetFloat()), (byte)(type-1)).Visualize();
+				new MainScript.Map.Entity.Flower(new Vector2(message.GetFloat(), message.GetFloat()), (byte)(type-1), uuid).Visualize();
 				break;
 			case 4:
-				new MainScript.Map.Entity.Stickman(new Vector2(message.GetFloat(), message.GetFloat()), message.GetString()).Visualize();
+				new MainScript.Map.Entity.Stickman(new Vector2(message.GetFloat(), message.GetFloat()), message.GetString(), uuid).Visualize();
 				break;
 			case 5:
-				new MainScript.Map.Entity.Airship(new Vector2(message.GetFloat(), message.GetFloat())).Visualize();
+				new MainScript.Map.Entity.Airship(new Vector2(message.GetFloat(), message.GetFloat()), uuid).Visualize();
 				break;
 		}
 	}
@@ -398,9 +402,10 @@ public class NetworkManager : MonoBehaviour {
 	[MessageHandler((ushort)MessageId.PlaceBuilding)]
 	private static void ProcessPlaceBuildingRequest(ushort sender, Message message) {
 		Message message1 = Message.Create(MessageSendMode.Reliable, MessageId.SpawnEntity);
+		string uuid = System.Guid.NewGuid().ToString();
 		switch (message.GetByte()) {
 			case 0:
-				MainScript.Map.Entity.Airship entity = new MainScript.Map.Entity.Airship(new Vector2(message.GetFloat(), message.GetFloat()));
+				MainScript.Map.Entity.Airship entity = new MainScript.Map.Entity.Airship(new Vector2(message.GetFloat(), message.GetFloat()), uuid);
 				message1.AddByte(5);
 				message1.AddFloat(entity.Position.x);
 				message1.AddFloat(entity.Position.y);
