@@ -3,7 +3,6 @@ using System.IO;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.Serialization.Formatters.Binary;
-using SimpleFileBrowser;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -15,18 +14,17 @@ public class MenuScript : MonoBehaviour {
     public GameObject SettingsCanvas;
 	public Toggle JoinServerOnHost;
     public GameObject NewMapCanvas;
+	public GameObject LoadMapCanvas;
     public TMP_InputField newMapNameField;
     public TMP_InputField newMapSeedField;
 	public TMP_InputField UsernameField;
+	public TMP_Dropdown LoadMapDropdown;
 	public GameObject MessageSending;
     public Button HostServerButton;
     public Button createMapButton;
     public Button newMapBackButton;
 
     public void Start4() {
-		FileBrowser.SetFilters(false, new FileBrowser.Filter("Maps", ".paperwars-map"));
-		FileBrowser.ClearQuickLinks();
-		FileBrowser.AddQuickLink("Maps", Application.persistentDataPath + "/maps");
 		JoinServerOnHost.isOn = GetComponent<MainScript>().settings.joinServerOnHost;
     }
 
@@ -67,11 +65,19 @@ public class MenuScript : MonoBehaviour {
     public void BackToHostServer() {
 		HostServerCanvas.SetActive(true);
 		NewMapCanvas.SetActive(false);
+		LoadMapCanvas.SetActive(false);
     }
 
     public void ExistingMap() {
 		HostServerCanvas.SetActive(false);
-		FileBrowser.ShowLoadDialog(LoadMapFromFile, BackToHostServer, FileBrowser.PickMode.Files, false, Application.persistentDataPath + "/maps");
+		string[] paths = Directory.GetFiles(Application.persistentDataPath + "/maps");
+		LoadMapDropdown.options = new();
+		foreach (string path in paths) {
+			if (new FileInfo(path).Name.Contains(".paperwars-map")) {
+				LoadMapDropdown.options.Add(new TMP_Dropdown.OptionData(Path.GetFileNameWithoutExtension(new FileInfo(path).Name)));
+			}
+		}
+		LoadMapCanvas.SetActive(true);
     }
 
     public void NewMap() {
@@ -100,8 +106,13 @@ public class MenuScript : MonoBehaviour {
 		GetComponent<NetworkManager>().JoinGame(ip);
     }
 
-    public void LoadMapFromFile(string[] paths) {
-		GetComponent<MainScript>().serverMap = JsonUtility.FromJson<MainScript.Map>(Base64.Decode(File.ReadAllText(paths[0])));
+	public void LoadMapConfirm() {
+		LoadMapCanvas.SetActive(false);
+		LoadMapFromFile(Application.persistentDataPath + "/maps/" + LoadMapDropdown.options[LoadMapDropdown.value] + ".paperwars-map");
+    }
+
+    public void LoadMapFromFile(string path) {
+		GetComponent<MainScript>().serverMap = JsonUtility.FromJson<MainScript.Map>(Base64.Decode(File.ReadAllText(path)));
 		GetComponent<NetworkManager>().StartHost();
 		if (!GetComponent<MainScript>().settings.joinServerOnHost) {
 			BackToMainMenu();
