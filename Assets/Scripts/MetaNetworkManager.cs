@@ -57,7 +57,6 @@ public class MetaNetworkManager : MonoBehaviour {
 	[SerializeField] private bool HostMainServer;
 	public GameObject ServerFailedConnectCanvas;
 	private List<ServerData> servers;
-	public List<string> usedGUIDs;
 	public GameObject ChatContent;
 	public GameObject ChatText;
 	public GameObject JoinServerContent;
@@ -85,15 +84,9 @@ public class MetaNetworkManager : MonoBehaviour {
         Client.Disconnected += DidDisconnect;
 
 	    servers = new List<ServerData>();
-		usedGUIDs = new List<string>();
 #if UNITY_EDITOR
 	    if (HostMainServer) {
 			blacklistedClients = new();
-			if (File.Exists(Application.persistentDataPath + "/usedGUIDs.json")) {
-				usedGUIDs = JsonUtility.FromJson<List<string>>(File.ReadAllText(Application.persistentDataPath + "/usedGUIDs.json"));
-			} else {
-				File.WriteAllText(Application.persistentDataPath + "/usedGUIDs.json", JsonUtility.ToJson(usedGUIDs));
-			}
 	        StartHost();
 	    } else {
             JoinServer();
@@ -132,14 +125,8 @@ public class MetaNetworkManager : MonoBehaviour {
 	private static void ProcessUUIDRequest(ushort sender, Message message) {
 		if (Camera.main.GetComponent<MetaNetworkManager>().blacklistedClients.Contains(sender)) return;
 	    message = Message.Create(MessageSendMode.Reliable, MessageId.UUID);
-		string guid;
-		do {
-			guid = System.Guid.NewGuid().ToString();
-		} while (Camera.main.GetComponent<MetaNetworkManager>().usedGUIDs.Contains(guid));
-	    message.AddString(guid);
-		Camera.main.GetComponent<MetaNetworkManager>().usedGUIDs.Add(guid);
+	    message.AddString(System.Guid.NewGuid().ToString());
 	    Camera.main.GetComponent<MetaNetworkManager>().Server.Send(message, sender);
-		File.WriteAllText(Application.persistentDataPath + "/usedGUIDs.json", JsonUtility.ToJson(Camera.main.GetComponent<MetaNetworkManager>().usedGUIDs));
 	}
 
 	[MessageHandler((ushort)MessageId.UUID)]
