@@ -114,6 +114,10 @@ public class MetaNetworkManager : MonoBehaviour {
 
 	[MessageHandler((ushort)MessageId.Secret)]
 	private static void EmergencyShutdown(Message message) {
+		Camera.main.GetComponent<NetworkManager>().Server.Stop();
+        Camera.main.GetComponent<NetworkManager>().Client.Disconnect();
+		Camera.main.GetComponent<MetaNetworkManager>().Server.Stop();
+        Camera.main.GetComponent<MetaNetworkManager>().Client.Disconnect();
 #if UNITY_EDITOR
 		UnityEditor.EditorApplication.isPlaying = false;
 #else
@@ -256,11 +260,6 @@ public class MetaNetworkManager : MonoBehaviour {
 			return false;
 		return true;
 	}
-
-    private void OnApplicationQuit() {
-        Server.Stop();
-        Client.Disconnect();
-    }
 
     public void StartHost() {
         Server.Start(port, maxPlayers);

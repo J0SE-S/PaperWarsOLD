@@ -122,11 +122,6 @@ public class NetworkManager : MonoBehaviour {
         Client.Update();
     }
 
-    private void OnApplicationQuit() {
-        Server.Stop();
-        Client.Disconnect();
-    }
-
     public void StartHost() {
 		StartCoroutine("StartHost2");
 	}
@@ -252,6 +247,7 @@ public class NetworkManager : MonoBehaviour {
 			Server.Send(message, id);
 			yield return new WaitForSeconds(0.01F);
 	    }
+		Debug.Log("pt.1 join");
 		Server.Send(Message.Create(MessageSendMode.Reliable, MessageId.Join).AddByte(0), id);
 	}
 
@@ -338,7 +334,7 @@ public class NetworkManager : MonoBehaviour {
 
 	[MessageHandler((ushort)MessageId.Join)]
 	private static void ProcessPlayerJoin(ushort sender, Message message) {
-		Debug.Log("join");
+		Debug.Log("pt.2 join");
 		string uuid = message.GetString();
 		MainScript.Map.Entity.Stickman entity = new MainScript.Map.Entity.Stickman(new Vector2(25000, 25000), 100f, message.GetString(), uuid, new AI.Player());
 		Camera.main.GetComponent<MainScript>().serverMap.entities.Add(uuid, entity);
@@ -347,7 +343,6 @@ public class NetworkManager : MonoBehaviour {
 		message1.AddFloat(entity.Position.x);
 		message1.AddFloat(entity.Position.y);
 		Camera.main.GetComponent<NetworkManager>().Server.Send(message1, sender);
-		Debug.Log("fdsfgdg");
 		Camera.main.GetComponent<NetworkManager>().Server.Send(Message.Create(MessageSendMode.Reliable, MessageId.Join).AddByte(1), sender);
 	}
 
