@@ -37,8 +37,8 @@ public class PlayerController : MonoBehaviour {
             GetComponent<MainScript>().PlayerWaypoint.SetActive(false);
             if (GetComponent<MainScript>().buildingPlacementMode == false) {
                 GetComponent<NetworkManager>().Client.Send(Message.Create(MessageSendMode.Reliable, NetworkManager.MessageId.Join).AddString(Camera.main.GetComponent<MainScript>().saveFile.uuid).AddString(Camera.main.GetComponent<MainScript>().saveFile.username));
+                Player = null;
             }
-            Player = null;
         } else if (Player != null) {
 		    transform.position = new Vector3(Player.transform.position.x, Player.transform.position.y, -10);
             GetComponent<MainScript>().PlayerWaypoint.SetActive(true);
