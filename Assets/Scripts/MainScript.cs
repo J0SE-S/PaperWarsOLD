@@ -222,6 +222,7 @@ public class MainScript : MonoBehaviour {
 				float Health {get; set;}
 			}
 
+			[Serializable]
 			public class Airship : Entity, IBuilding {
 				public float Health {get; set;}
 				public float Width {get; set;}
@@ -317,14 +318,6 @@ public class MainScript : MonoBehaviour {
 		public byte[] tileMap() {
 			return tiles;
 		}
-
-		/*public Tile decompressTile(byte tile) {
-			if (tile >= 64) {
-				return new Tile(tile - 64, true);
-			} else {
-				return new Tile(tile);
-			}
-		}*/
 
 		public void LoadServerChunk(byte[,] chunk, int row, int column) {
 			for (int x = 0; x < 25; x++) {

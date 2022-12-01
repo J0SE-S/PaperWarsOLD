@@ -104,7 +104,7 @@ public class NetworkManager : MonoBehaviour {
 
 	private void SaveMap() {
 	    if (Server.IsRunning) {
-			File.WriteAllText(Application.persistentDataPath + "/maps/" + GetComponent<MainScript>().serverMap.name + ".paperwars-map",Base64.Encode(JsonUtility.ToJson(GetComponent<MainScript>().serverMap)));
+			File.WriteAllText(Application.persistentDataPath + "/maps/" + GetComponent<MainScript>().serverMap.name + ".paperwars-map", Base64.Encode(JsonUtility.ToJson(GetComponent<MainScript>().serverMap)));
 	    }
 	}
 
@@ -338,6 +338,7 @@ public class NetworkManager : MonoBehaviour {
 
 	[MessageHandler((ushort)MessageId.Join)]
 	private static void ProcessPlayerJoin(ushort sender, Message message) {
+		Debug.Log("join");
 		string uuid = message.GetString();
 		MainScript.Map.Entity.Stickman entity = new MainScript.Map.Entity.Stickman(new Vector2(25000, 25000), 100f, message.GetString(), uuid, new AI.Player());
 		Camera.main.GetComponent<MainScript>().serverMap.entities.Add(uuid, entity);
@@ -374,6 +375,7 @@ public class NetworkManager : MonoBehaviour {
 
 	[MessageHandler((ushort)MessageId.SpawnEntity)]
 	private static void ProcessEntityData(Message message) {
+		Debug.Log("spawnentity");
 		string uuid = message.GetString();
 		byte type = message.GetByte();
 		switch (type) {

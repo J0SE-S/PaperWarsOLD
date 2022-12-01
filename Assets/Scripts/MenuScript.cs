@@ -108,7 +108,7 @@ public class MenuScript : MonoBehaviour {
 
 	public void LoadMapConfirm() {
 		LoadMapCanvas.SetActive(false);
-		LoadMapFromFile(Application.persistentDataPath + "/maps/" + LoadMapDropdown.options[LoadMapDropdown.value] + ".paperwars-map");
+		LoadMapFromFile(Application.persistentDataPath + "/maps/" + LoadMapDropdown.options[LoadMapDropdown.value].text + ".paperwars-map");
     }
 
     public void LoadMapFromFile(string path) {
