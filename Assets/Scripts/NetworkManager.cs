@@ -247,7 +247,6 @@ public class NetworkManager : MonoBehaviour {
 			Server.Send(message, id);
 			yield return new WaitForSeconds(0.01F);
 	    }
-		Debug.Log("pt.1 join");
 		Server.Send(Message.Create(MessageSendMode.Reliable, MessageId.Join).AddByte(0), id);
 	}
 
@@ -334,9 +333,8 @@ public class NetworkManager : MonoBehaviour {
 
 	[MessageHandler((ushort)MessageId.Join)]
 	private static void ProcessPlayerJoin(ushort sender, Message message) {
-		Debug.Log("pt.2 join");
 		string uuid = message.GetString();
-		MainScript.Map.Entity.Stickman entity = new MainScript.Map.Entity.Stickman(new Vector2(25000, 25000), 100f, message.GetString(), uuid, new AI.Player());
+		MainScript.Map.Entity.Stickman entity = new MainScript.Map.Entity.Stickman(new Vector2(25000, 25000), 100f, message.GetString(), uuid, new AI.Null());
 		Camera.main.GetComponent<MainScript>().serverMap.entities.Add(uuid, entity);
 		Camera.main.GetComponent<NetworkManager>().playerEntities.Add(sender, uuid);
 		Message message1 = Message.Create(MessageSendMode.Reliable, MessageId.SpawnEntity);
@@ -370,7 +368,6 @@ public class NetworkManager : MonoBehaviour {
 
 	[MessageHandler((ushort)MessageId.SpawnEntity)]
 	private static void ProcessEntityData(Message message) {
-		Debug.Log("spawnentity");
 		string uuid = message.GetString();
 		byte type = message.GetByte();
 		switch (type) {
@@ -393,7 +390,7 @@ public class NetworkManager : MonoBehaviour {
 
 	[MessageHandler((ushort)MessageId.EntityMovement)]
 	private static void ProcessEntityMovement(ushort sender, Message message) {
-		(Camera.main.GetComponent<MainScript>().serverMap.entities[Camera.main.GetComponent<NetworkManager>().playerEntities[sender]].ai as AI.Player).queuedActions.Enqueue(new AI.Player.PlayerAction(new Vector2(message.GetFloat(), message.GetFloat())));
+		//(Camera.main.GetComponent<MainScript>().serverMap.entities[Camera.main.GetComponent<NetworkManager>().playerEntities[sender]].ai as AI.Player).queuedActions.Enqueue(new AI.Player.PlayerAction(new Vector2(message.GetFloat(), message.GetFloat())));
 	}
 
 	[MessageHandler((ushort)MessageId.PlaceBuilding)]

@@ -198,7 +198,6 @@ public class MainScript : MonoBehaviour {
 					displayName = newDisplayName;
 					ai = newAi;
 					uuid = newUUID;
-					(ai as AI.Player).entity = this;
 				}
 
 				public override void Visualize() {

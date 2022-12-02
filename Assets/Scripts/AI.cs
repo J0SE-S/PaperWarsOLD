@@ -20,7 +20,7 @@ public interface AI {
         }
     }
 
-    public class Player : AI {
+    /*public class Player : AI {
         public class PlayerAction : AIAction {
             public enum PlayerActionType {
                 MOVEMENT
@@ -52,7 +52,7 @@ public interface AI {
             }
             return queuedActions.Dequeue();
         }
-    }
+    }*/
 
     public class Stickman : AI {
         public class StickmanAIAction : AIAction {
