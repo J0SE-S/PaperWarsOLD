@@ -27,6 +27,7 @@ public class MetaNetworkManager : MonoBehaviour {
 
 	public enum MessageId : ushort {
 		Secret = 100,
+		Version,
 		UUID,
 		ChatMessage,
 	    ServerList,
@@ -62,6 +63,8 @@ public class MetaNetworkManager : MonoBehaviour {
 	public GameObject JoinServerContent;
 	public GameObject ServerButton;
 	public List<ushort> blacklistedClients;
+	public Dictionary<ushort, MainScript.Version> clientVersions;
+	public List<MainScript.Version> blacklistedVersions;
 	public string secret;
 
     public Server Server { get; private set; }
@@ -123,6 +126,16 @@ public class MetaNetworkManager : MonoBehaviour {
 #else
         Application.Quit();
 #endif
+	}
+
+	[MessageHandler((ushort)MessageId.Version)]
+	private static void ProcessVersion(ushort sender, Message message) {
+		MainScript.Version version = new MainScript.Version(message.GetByte(), message.GetByte(), message.GetByte(), (MainScript.Version.SubversionType) message.GetByte(), message.GetByte());
+		if (Camera.main.GetComponent<MetaNetworkManager>().blacklistedVersions.Contains(version)) {
+			Message disconnectMessage = Message.Create(MessageSendMode.Reliable, MessageId.Version);
+			message.AddByte(0);
+			Camera.main.GetComponent<MetaNetworkManager>().Server.DisconnectClient(sender, disconnectMessage);
+		}
 	}
 
 	[MessageHandler((ushort)MessageId.UUID)]
@@ -262,6 +275,7 @@ public class MetaNetworkManager : MonoBehaviour {
 	}
 
     public void StartHost() {
+		clientVersions = new();
         Server.Start(port, maxPlayers);
 		Client.Connect($"127.0.0.1:{port}");
     }
@@ -300,7 +314,16 @@ public class MetaNetworkManager : MonoBehaviour {
 	}
 
     private void DidDisconnect(object sender, DisconnectedEventArgs e) {
-	    MainScript.PrintMessageError("Disconnected from The Main Server!");
+		if (e.Message == null) {
+	    	MainScript.PrintMessageError("Disconnected from The Main Server! Reason: Unknown.");
+		} else {
+			byte reason = e.Message.GetByte();
+			switch (reason) {
+				case 0:
+					MainScript.PrintMessageError("Disconnected from The Main Server! Reason: Blacklisted Version.");
+					break;
+			}
+		}
 	    ServerFailedConnectCanvas.SetActive(true);
 	}
 }
