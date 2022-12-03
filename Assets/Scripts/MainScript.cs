@@ -72,34 +72,11 @@ public class MainScript : MonoBehaviour {
     }
 
     public class SaveFile {
-		public class Item {
-	    	public enum Type : ushort {
-	    		WET_SAND,
-	    		CLAY_SHARD,
-	    		STICK,
-	    		ROCK
-	    	}
-
-	    	public Type type;
-	    	public ushort count;
-    	}
-
-		public string uuid;
 		public Version version;
-		public string username;
-		public List<Item> inventory;
 
-		public SaveFile(string newUUID) {
-	    	uuid = newUUID;
+		public SaveFile() {
 			version = new Version(Camera.main.GetComponent<MainScript>().currentVersion);
-			username = "Player";
-	    	inventory = new List<Item>();
 		}
-
-		//public SaveFile(string newUUID, List<Item> newInventory) {
-	    //	uuid = newUUID;
-	    //	inventory = newInventory;
-		//}
     }
 
     public class Coordinate {
@@ -437,15 +414,15 @@ public class MainScript : MonoBehaviour {
 		message.color = new Color32(190, 17, 17, 255);
     }
 
-	public void ChangeUsername() {
-		GetComponent<MetaNetworkManager>().SendChatMessage(saveFile.username + " has been renamed to " + UsernameField.text);
-		saveFile.username = UsernameField.text;
-	}
+	//public void ChangeUsername() {
+	//	GetComponent<MetaNetworkManager>().SendChatMessage(GetComponent<MetaNetworkManager>().localAccount.username + " has been renamed to " + UsernameField.text);
+	//	GetComponent<MetaNetworkManager>().localAccount.username = UsernameField.text;
+	//}
 
 	public void SendMessageToServer(string message) {
 		if (SendMessageField.wasCanceled)
         	return;
-		GetComponent<MetaNetworkManager>().SendChatMessage(saveFile.username + ": " + message);
+		GetComponent<MetaNetworkManager>().SendChatMessage(GetComponent<MetaNetworkManager>().localAccount.username + ": " + message);
 		SendMessageField.text = "";
 	}
 

@@ -145,7 +145,7 @@ public class NetworkManager : MonoBehaviour {
 			yield return new WaitForSeconds(0.002f);
 		}
 		hostedServerName = GetComponent<MainScript>().serverMap.name;
-		hostedServerHostName = GetComponent<MainScript>().saveFile.username;
+		hostedServerHostName = GetComponent<MetaNetworkManager>().localAccount.username;
 		hostedServerVersion = GetComponent<MainScript>().currentVersion.ToString();
 		GetComponent<MenuScript>().HostServerButton.interactable = false;
 		MainScript.PrintMessage("Server Started!");
@@ -162,7 +162,7 @@ public class NetworkManager : MonoBehaviour {
 		Server.Start(port, maxPlayers);
 		MainScript.PrintMessage("Server Started!");
 		GetComponent<MetaNetworkManager>().SendStartServerData(hostedServerName, hostedServerHostName, new WebClient().DownloadString("http://icanhazip.com").Replace("\r\n", "").Replace("\n", "").Replace("\r", ""));
-		GetComponent<MetaNetworkManager>().SendChatMessage(GetComponent<MainScript>().saveFile.username + " has started the server \"" + hostedServerName + " | Hosted by: " + hostedServerHostName + " (" + hostedServerVersion + ")" + "\".");
+		GetComponent<MetaNetworkManager>().SendChatMessage(GetComponent<MetaNetworkManager>().localAccount.username + " has started the server \"" + hostedServerName + " | Hosted by: " + hostedServerHostName + " (" + hostedServerVersion + ")" + "\".");
 	}
 
     public void JoinGame(string ip) {
@@ -183,7 +183,7 @@ public class NetworkManager : MonoBehaviour {
 	    MainScript.PrintMessage("Joined Server!");
 	    GameCanvas.SetActive(true);
 		GetComponent<MenuScript>().MessageSending.SetActive(true);
-		GetComponent<MetaNetworkManager>().SendChatMessage(GetComponent<MainScript>().saveFile.username + " has connected to server \"" + connectedServerName + " | Hosted by: " + connectedServerHostName + " (" + connectedServerVersion + ")" + "\".");
+		GetComponent<MetaNetworkManager>().SendChatMessage(GetComponent<MetaNetworkManager>().localAccount.username + " has connected to server \"" + connectedServerName + " | Hosted by: " + connectedServerHostName + " (" + connectedServerVersion + ")" + "\".");
     }
 
     private void FailedToConnect(object sender, EventArgs e) {
@@ -268,7 +268,7 @@ public class NetworkManager : MonoBehaviour {
 			serverReconnectionAttempts++;
 			JoinGame(connectedIp);
 	    }
-		GetComponent<MetaNetworkManager>().SendChatMessage(GetComponent<MainScript>().saveFile.username + " has disconnected from server \"" + connectedServerName + " | Hosted by: " + connectedServerHostName + " (" + connectedServerVersion + ")" + "\".");
+		GetComponent<MetaNetworkManager>().SendChatMessage(GetComponent<MetaNetworkManager>().localAccount.username + " has disconnected from server \"" + connectedServerName + " | Hosted by: " + connectedServerHostName + " (" + connectedServerVersion + ")" + "\".");
 	}
 
 	private static Color32 ToColor(byte color) {
@@ -333,8 +333,8 @@ public class NetworkManager : MonoBehaviour {
 
 	[MessageHandler((ushort)MessageId.Join)]
 	private static void ProcessPlayerJoin(ushort sender, Message message) {
-		string uuid = message.GetString();
-		MainScript.Map.Entity.Stickman entity = new MainScript.Map.Entity.Stickman(new Vector2(25000, 25000), 100f, message.GetString(), uuid, new AI.Null());
+		string uuid = connectedClients[sender].uuid;
+		MainScript.Map.Entity.Stickman entity = new MainScript.Map.Entity.Stickman(new Vector2(25000, 25000), 100f, connectedClients[sender].username, uuid, new AI.Null());
 		Camera.main.GetComponent<MainScript>().serverMap.entities.Add(uuid, entity);
 		Camera.main.GetComponent<NetworkManager>().playerEntities.Add(sender, uuid);
 		Message message1 = Message.Create(MessageSendMode.Reliable, MessageId.SpawnEntity);
