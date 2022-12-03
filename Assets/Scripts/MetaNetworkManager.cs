@@ -25,6 +25,13 @@ public class MetaNetworkManager : MonoBehaviour {
 	    }
 	}
 
+	public class Account {
+		public string username;
+		public string password;
+	}
+
+	public class ClientData {}
+
 	public enum MessageId : ushort {
 		Secret = 100,
 		Version,

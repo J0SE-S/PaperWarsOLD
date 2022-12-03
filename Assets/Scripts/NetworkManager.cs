@@ -162,7 +162,7 @@ public class NetworkManager : MonoBehaviour {
 		Server.Start(port, maxPlayers);
 		MainScript.PrintMessage("Server Started!");
 		GetComponent<MetaNetworkManager>().SendStartServerData(hostedServerName, hostedServerHostName, new WebClient().DownloadString("http://icanhazip.com").Replace("\r\n", "").Replace("\n", "").Replace("\r", ""));
-		GetComponent<MetaNetworkManager>().SendChatMessage(GetComponent<MainScript>().saveFile.username + " has started the server \"" + hostedServerName + " | Hosted by: " + hostedServerHostName + " (v" + hostedServerVersion + ")" + "\".");
+		GetComponent<MetaNetworkManager>().SendChatMessage(GetComponent<MainScript>().saveFile.username + " has started the server \"" + hostedServerName + " | Hosted by: " + hostedServerHostName + " (" + hostedServerVersion + ")" + "\".");
 	}
 
     public void JoinGame(string ip) {
@@ -183,7 +183,7 @@ public class NetworkManager : MonoBehaviour {
 	    MainScript.PrintMessage("Joined Server!");
 	    GameCanvas.SetActive(true);
 		GetComponent<MenuScript>().MessageSending.SetActive(true);
-		GetComponent<MetaNetworkManager>().SendChatMessage(GetComponent<MainScript>().saveFile.username + " has connected to server \"" + connectedServerName + " | Hosted by: " + connectedServerHostName + " (v" + connectedServerVersion + ")" + "\".");
+		GetComponent<MetaNetworkManager>().SendChatMessage(GetComponent<MainScript>().saveFile.username + " has connected to server \"" + connectedServerName + " | Hosted by: " + connectedServerHostName + " (" + connectedServerVersion + ")" + "\".");
     }
 
     private void FailedToConnect(object sender, EventArgs e) {
@@ -268,7 +268,7 @@ public class NetworkManager : MonoBehaviour {
 			serverReconnectionAttempts++;
 			JoinGame(connectedIp);
 	    }
-		GetComponent<MetaNetworkManager>().SendChatMessage(GetComponent<MainScript>().saveFile.username + " has disconnected from server \"" + connectedServerName + " | Hosted by: " + connectedServerHostName + " (v" + connectedServerVersion + ")" + "\".");
+		GetComponent<MetaNetworkManager>().SendChatMessage(GetComponent<MainScript>().saveFile.username + " has disconnected from server \"" + connectedServerName + " | Hosted by: " + connectedServerHostName + " (" + connectedServerVersion + ")" + "\".");
 	}
 
 	private static Color32 ToColor(byte color) {

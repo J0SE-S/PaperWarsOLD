@@ -42,11 +42,11 @@ public class MainScript : MonoBehaviour {
 		public override string ToString() {
 			switch (subversionType) {
 				case SubversionType.RELEASE:
-					return major + "." + minor + "." + patch;
+					return "v" + major + "." + minor + "." + patch;
 				case SubversionType.BUILD:
-					return major + "." + minor + "." + patch + "-build." + subversion;
+					return "v" + major + "." + minor + "." + patch + "-build." + subversion;
 				case SubversionType.RELEASE_CANDIDATE:
-					return major + "." + minor + "." + patch + "-rc." + subversion;
+					return "v" + major + "." + minor + "." + patch + "-rc." + subversion;
 			}
 			return "invalid version";
 		}
