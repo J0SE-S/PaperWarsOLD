@@ -28,7 +28,8 @@ public class MetaNetworkManager : MonoBehaviour {
 	public enum MessageId : ushort {
 		Secret = 100,
 		Version,
-		UUID,
+		RegisterAccount,
+		LoginAccount,
 		ChatMessage,
 	    ServerList,
 	    StartServer,
@@ -56,6 +57,14 @@ public class MetaNetworkManager : MonoBehaviour {
     [SerializeField] private ushort port;
     [SerializeField] private ushort maxPlayers;
 	[SerializeField] private bool HostMainServer;
+	public GameObject LoginCanvas;
+	public GameObject SignupCanvas;
+	public TMP_Text LoginMessage;
+	public TMP_Text SignupMessage;
+	public TMP_InputField LoginUsernameField;
+	public TMP_InputField LoginPasswordField;
+	public TMP_InputField SignupUsernameField;
+	public TMP_InputField SignupPasswordField;
 	public GameObject ServerFailedConnectCanvas;
 	private List<ServerData> servers;
 	public GameObject ChatContent;
@@ -138,15 +147,15 @@ public class MetaNetworkManager : MonoBehaviour {
 		}
 	}
 
-	[MessageHandler((ushort)MessageId.UUID)]
+	//[MessageHandler((ushort)MessageId.UUID)]
 	private static void ProcessUUIDRequest(ushort sender, Message message) {
 		if (Camera.main.GetComponent<MetaNetworkManager>().blacklistedClients.Contains(sender)) return;
-	    message = Message.Create(MessageSendMode.Reliable, MessageId.UUID);
-	    message.AddString(System.Guid.NewGuid().ToString());
-	    Camera.main.GetComponent<MetaNetworkManager>().Server.Send(message, sender);
+	    //message = Message.Create(MessageSendMode.Reliable, MessageId.UUID);
+	    //message.AddString(System.Guid.NewGuid().ToString());
+	    //Camera.main.GetComponent<MetaNetworkManager>().Server.Send(message, sender);
 	}
 
-	[MessageHandler((ushort)MessageId.UUID)]
+	//[MessageHandler((ushort)MessageId.UUID)]
 	private static void ProcessUUID(Message message) {
 	    Camera.main.GetComponent<MainScript>().saveFile = new MainScript.SaveFile(message.GetString());
 	    File.WriteAllText(Application.persistentDataPath+"/save_file.paperwars-save",Base64.Encode(JsonUtility.ToJson(Camera.main.GetComponent<MainScript>().saveFile)));
@@ -154,32 +163,23 @@ public class MetaNetworkManager : MonoBehaviour {
 		Camera.main.GetComponent<MetaNetworkManager>().SendChatMessage(Camera.main.GetComponent<MainScript>().saveFile.username + " has connected to the Main Server!");
 	}
 
-	private void SaveFile() {
-		File.WriteAllText(Application.persistentDataPath+"/save_file.paperwars-save",Base64.Encode(JsonUtility.ToJson(Camera.main.GetComponent<MainScript>().saveFile)));
-	}
-
-	/*public void SendChatMessage(string message) {
-		Message message1 = Message.Create(MessageSendMode.Reliable, MessageId.ChatMessage);
-		message1.AddString(message);
-		Client.Send(message1);
-		GameObject message2 = Instantiate(Camera.main.GetComponent<MetaNetworkManager>().ChatText);
-		message2.GetComponent<TMP_Text>().text = message;
-		message2.transform.SetParent(Camera.main.GetComponent<MetaNetworkManager>().ChatContent.transform, false);
-	}*/
+	//private void SaveFile() {
+	//	File.WriteAllText(Application.persistentDataPath+"/save_file.paperwars-save",Base64.Encode(JsonUtility.ToJson(Camera.main.GetComponent<MainScript>().saveFile)));
+	//}
 
 	public void SendChatMessage(string message) {
 		Message message1 = Message.Create(MessageSendMode.Reliable, MessageId.ChatMessage);
 		message1.AddString(message);
 		Client.Send(message1);
-		GameObject message2 = Instantiate(Camera.main.GetComponent<MetaNetworkManager>().ChatText);
-		message2.GetComponent<TMP_Text>().text = message;
-		message2.transform.SetParent(Camera.main.GetComponent<MetaNetworkManager>().ChatContent.transform, false);
+		//GameObject message2 = Instantiate(Camera.main.GetComponent<MetaNetworkManager>().ChatText);
+		//message2.GetComponent<TMP_Text>().text = message;
+		//message2.transform.SetParent(Camera.main.GetComponent<MetaNetworkManager>().ChatContent.transform, false);
 	}
 
 	[MessageHandler((ushort)MessageId.ChatMessage)]
 	private static void ProcessChatMessage(ushort sender, Message message) {
 		if (Camera.main.GetComponent<MetaNetworkManager>().blacklistedClients.Contains(sender)) return;
-		Camera.main.GetComponent<MetaNetworkManager>().Server.SendToAll(message, sender);
+		Camera.main.GetComponent<MetaNetworkManager>().Server.SendToAll(message);
 	}
 
 	[MessageHandler((ushort)MessageId.ChatMessage)]
@@ -286,17 +286,52 @@ public class MetaNetworkManager : MonoBehaviour {
 	    Client.Connect($"71.217.34.150:{port}");
 	}
 
+	public void SwitchToLoginCanvas() {
+		LoginUsernameField.text = "";
+		LoginPasswordField.text = "";
+		LoginCanvas.SetActive(true);
+		SignupCanvas.SetActive(false);
+	}
+
+	public void SwitchToSignUpCanvas() {
+		SignupUsernameField.text = "";
+		SignupPasswordField.text = "";
+		LoginCanvas.SetActive(false);
+		SignupCanvas.SetActive(true);
+	}
+
+	public void Login() {}
+
+	public void SignUp() {
+		if (SignupUsernameField.text == "") {
+			SignupMessage.text = "Please enter a username.";
+			return;
+		}
+		if (SignupPasswordField.text == "") {
+			SignupMessage.text = "Please enter a password.";
+			return;
+		}
+		Client.Send(Message.Create(MessageSendMode.Reliable, MessageId.RegisterAccount).AddString(SignupUsernameField.text).AddString(SignupPasswordField.text));
+		SignupMessage.text = "";
+	}
+
+	[MessageHandler((ushort)MessageId.RegisterAccount)]
+	private static void ProcessSignUp(ushort sender, Message message) {
+		string username = message.GetString();
+		string password = message.GetString();
+	}
+
     private void DidConnect(object sender, EventArgs e) {
 	    MainScript.PrintMessage("Connected to The Main Server!");
 		Client.Send(Message.Create(MessageSendMode.Reliable, MessageId.Secret).AddString(Camera.main.GetComponent<MetaNetworkManager>().secret));
-	    GetComponent<MenuScript>().MainMenuCanvas.SetActive(true);
-	    if (GetComponent<MainScript>().saveFile == null) {
-	        Client.Send(Message.Create(MessageSendMode.Reliable, MessageId.UUID));
-		} else {
-			InvokeRepeating("SaveFile", 5f, 5f);
-			GetComponent<MenuScript>().UsernameField.text = GetComponent<MainScript>().saveFile.username;
-			SendChatMessage(GetComponent<MainScript>().saveFile.username + " has connected to the Main Server!");
-		}
+	    LoginCanvas.SetActive(true);
+	    //if (GetComponent<MainScript>().saveFile == null) {
+	    //    Client.Send(Message.Create(MessageSendMode.Reliable, MessageId.UUID));
+		//} else {
+		//	InvokeRepeating("SaveFile", 5f, 5f);
+		//	GetComponent<MenuScript>().UsernameField.text = GetComponent<MainScript>().saveFile.username;
+		//	SendChatMessage(GetComponent<MainScript>().saveFile.username + " has connected to the Main Server!");
+		//}
     }
 
     private void FailedToConnect(object sender, ConnectionFailedEventArgs e) {
