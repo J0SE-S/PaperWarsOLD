@@ -5,7 +5,9 @@ The following versions are supported:
 | Version | Supported          |
 | ------- | ------------------ |
 
-## Reporting a Vulnerability
-If you find a bug, and believe it cannot be used to give yourself any advantage in PaperWars, then you should report it normally.  
-  
-However, if you believe the bug can give you an advantage in PaperWars, please go to security, then to advisories, then report it there.
+## Reporting a Bug
+There are two ways to report a vulnerability: opening a bug report, and issuing a private security advisory.  
+You should open a bug report when:  
+The bug has temporary effects,  
+Or the bug cannot be used to give anyone an advantage in the game.  
+If none of the above are true, or you are not sure which way to report the bug, please issue a private security advisory.
