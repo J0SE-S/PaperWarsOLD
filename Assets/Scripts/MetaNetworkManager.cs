@@ -29,14 +29,13 @@ public class MetaNetworkManager : MonoBehaviour {
 		public string uuid;
 		public string username;
 		public string password;
-		public MainScript.SaveFile saveFile;
 		public bool blacklisted;
 
-		public Account(string newUUID) {
+		public Account(string newUUID, string newUsername, string newPassword) {
 			uuid = newUUID;
-			username = "";
-			password = "";
-			saveFile = new();
+			username = newUsername;
+			password = newPassword;
+			blacklisted = false;
 		}
 	}
 
@@ -52,11 +51,16 @@ public class MetaNetworkManager : MonoBehaviour {
 			set {blacklisted = value;}
 		}
 		public MainScript.Version version;
+
+		public ClientData() {
+			account = null;
+			blacklisted = false;
+			version = null;
+		}
 	}
 
 	public enum MessageId : ushort {
-		Secret = 100,
-		Version,
+		Version = 100,
 		RegisterAccount,
 		LoginAccount,
 		ChatMessage,
@@ -127,6 +131,7 @@ public class MetaNetworkManager : MonoBehaviour {
 	    servers = new List<ServerData>();
 #if UNITY_EDITOR
 	    if (HostMainServer) {
+			Directory.CreateDirectory(Application.persistentDataPath + "/accounts");
 			connectedClients = new();
 	        StartHost();
 	    } else {
@@ -144,28 +149,6 @@ public class MetaNetworkManager : MonoBehaviour {
 		Client.Update();
     }
 
-	[MessageHandler((ushort)MessageId.Secret)]
-	private static void ProcessSecret(ushort sender, Message message) {
-	    if (message.GetString() == Camera.main.GetComponent<MetaNetworkManager>().secret) {
-			Camera.main.GetComponent<MetaNetworkManager>().connectedClients[sender].Blacklisted = false;
-		} else {
-			Camera.main.GetComponent<MetaNetworkManager>().Server.Send(message, sender);
-		}
-	}
-
-	[MessageHandler((ushort)MessageId.Secret)]
-	private static void EmergencyShutdown(Message message) {
-		Camera.main.GetComponent<NetworkManager>().Server.Stop();
-        Camera.main.GetComponent<NetworkManager>().Client.Disconnect();
-		Camera.main.GetComponent<MetaNetworkManager>().Server.Stop();
-        Camera.main.GetComponent<MetaNetworkManager>().Client.Disconnect();
-#if UNITY_EDITOR
-		UnityEditor.EditorApplication.isPlaying = false;
-#else
-        Application.Quit();
-#endif
-	}
-
 	[MessageHandler((ushort)MessageId.Version)]
 	private static void ProcessVersion(ushort sender, Message message) {
 		MainScript.Version version = new MainScript.Version(message.GetByte(), message.GetByte(), message.GetByte(), (MainScript.Version.SubversionType) message.GetByte(), message.GetByte());
@@ -173,24 +156,26 @@ public class MetaNetworkManager : MonoBehaviour {
 			Message disconnectMessage = Message.Create(MessageSendMode.Reliable, MessageId.Version);
 			message.AddByte(0);
 			Camera.main.GetComponent<MetaNetworkManager>().Server.DisconnectClient(sender, disconnectMessage);
+		} else {
+			Camera.main.GetComponent<MetaNetworkManager>().connectedClients[sender].version = version;
 		}
 	}
 
 	//[MessageHandler((ushort)MessageId.UUID)]
-	private static void ProcessUUIDRequest(ushort sender, Message message) {
+	//private static void ProcessUUIDRequest(ushort sender, Message message) {
 		//if (Camera.main.GetComponent<MetaNetworkManager>().connectedClients[sender].Blacklisted) return;
 	    //message = Message.Create(MessageSendMode.Reliable, MessageId.UUID);
 	    //message.AddString(System.Guid.NewGuid().ToString());
 	    //Camera.main.GetComponent<MetaNetworkManager>().Server.Send(message, sender);
-	}
+	//}
 
 	//[MessageHandler((ushort)MessageId.UUID)]
-	private static void ProcessUUID(Message message) {
+	//private static void ProcessUUID(Message message) {
 	    //Camera.main.GetComponent<MainScript>().saveFile = new MainScript.SaveFile(message.GetString());
 	    //File.WriteAllText(Application.persistentDataPath+"/save_file.paperwars-save",Base64.Encode(JsonUtility.ToJson(Camera.main.GetComponent<MainScript>().saveFile)));
 		//Camera.main.GetComponent<MenuScript>().UsernameField.text = Camera.main.GetComponent<MainScript>().saveFile.username;
 		//Camera.main.GetComponent<MetaNetworkManager>().SendChatMessage(Camera.main.GetComponent<MainScript>().saveFile.username + " has connected to the Main Server!");
-	}
+	//}
 
 	//private void SaveFile() {
 	//	File.WriteAllText(Application.persistentDataPath+"/save_file.paperwars-save",Base64.Encode(JsonUtility.ToJson(Camera.main.GetComponent<MainScript>().saveFile)));
@@ -345,14 +330,36 @@ public class MetaNetworkManager : MonoBehaviour {
 	}
 
 	[MessageHandler((ushort)MessageId.RegisterAccount)]
-	private static void ProcessSignUp(ushort sender, Message message) {
+	private static void ProcessAccountRegister(ushort sender, Message message) {
+		string uuid;
 		string username = message.GetString();
 		string password = message.GetString();
+		do {
+			uuid = System.Guid.NewGuid().ToString();
+		} while (File.Exists(Application.persistentDataPath + "/accounts/" + uuid + ".paperwars-account"));
+		foreach (ClientData clientData in Camera.main.GetComponent<MetaNetworkManager>().connectedClients.Values) {
+			if (username == clientData.account.username) {
+				Camera.main.GetComponent<MetaNetworkManager>().Server.Send(Message.Create(MessageSendMode.Reliable, MessageId.RegisterAccount).AddByte(1), sender);
+				return;
+			}
+		}
+		Account account = new Account(uuid, username, password);
+		Camera.main.GetComponent<MetaNetworkManager>().connectedClients[sender].account = account;
+		File.WriteAllText(Application.persistentDataPath + "/accounts/" + uuid + ".paperwars-account", JsonUtility.ToJson(account));
+	}
+
+	[MessageHandler((ushort)MessageId.RegisterAccount)]
+	private static void ProcessAccountRegister(Message message) {
+		switch (message.GetByte()) {
+			case 1:
+				Camera.main.GetComponent<MetaNetworkManager>().SignupMessage.text = "Username already in use!";
+				break;
+		}
 	}
 
     private void DidConnect(object sender, EventArgs e) {
 	    MainScript.PrintMessage("Connected to The Main Server!");
-		Client.Send(Message.Create(MessageSendMode.Reliable, MessageId.Secret).AddString(Camera.main.GetComponent<MetaNetworkManager>().secret));
+		//Client.Send(Message.Create(MessageSendMode.Reliable, MessageId.Secret).AddString(Camera.main.GetComponent<MetaNetworkManager>().secret));
 	    LoginCanvas.SetActive(true);
 	    //if (GetComponent<MainScript>().saveFile == null) {
 	    //    Client.Send(Message.Create(MessageSendMode.Reliable, MessageId.UUID));
@@ -369,7 +376,8 @@ public class MetaNetworkManager : MonoBehaviour {
 	}
 
     private void PlayerJoined(object sender, ServerConnectedEventArgs e) {
-		connectedClients.Add(e.Client.Id);
+		ClientData client = new ClientData();
+		connectedClients.Add(e.Client.Id, client);
 	}
 
 	public void PlayerLeft(object sender, ServerDisconnectedEventArgs e) {
@@ -384,7 +392,7 @@ public class MetaNetworkManager : MonoBehaviour {
 			byte reason = e.Message.GetByte();
 			switch (reason) {
 				case 0:
-					MainScript.PrintMessageError("Disconnected from The Main Server! Reason: Blacklisted Version.");
+					MainScript.PrintMessageError("Disconnected from The Main Server! Reason: Blocked Version.");
 					break;
 			}
 		}

@@ -71,13 +71,13 @@ public class MainScript : MonoBehaviour {
 		}
     }
 
-    public class SaveFile {
+    /*public class SaveFile {
 		public Version version;
 
 		public SaveFile() {
 			version = new Version(Camera.main.GetComponent<MainScript>().currentVersion);
 		}
-    }
+    }*/
 
     public class Coordinate {
 		public int x;
@@ -310,7 +310,6 @@ public class MainScript : MonoBehaviour {
 	public TMP_Text versionDisplay;
     [NonSerialized] public Map serverMap;
     public Settings settings;
-    public SaveFile saveFile;
     public Tilemap solidTilemap;
     public Tilemap nonSolidTilemap;
 	public Tilemap serverTilemap;
@@ -343,12 +342,6 @@ public class MainScript : MonoBehaviour {
 			File.WriteAllText(Application.persistentDataPath+"/settings.json",JsonUtility.ToJson(settings));
 		} else {
 			settings = JsonUtility.FromJson<Settings>(File.ReadAllText(Application.persistentDataPath + "/settings.json"));
-		}
-		if (!File.Exists(Application.persistentDataPath + "/maps")) {
-			Directory.CreateDirectory(Application.persistentDataPath + "/maps");
-		}
-		if (File.Exists(Application.persistentDataPath + "/save_file.paperwars-save")) {
-			saveFile = JsonUtility.FromJson<SaveFile>(Base64.Decode(File.ReadAllText(Application.persistentDataPath+"/save_file.paperwars-save")));
 		}
 		LoadedEntities = new Dictionary<string, GameObject>();
 		GetComponent<NetworkManager>().Start2();

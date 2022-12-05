@@ -327,14 +327,14 @@ public class NetworkManager : MonoBehaviour {
 			Camera.main.GetComponent<MainScript>().buildingPlacementType = 0;
 			Camera.main.GetComponent<PlayerController>().Player = Camera.main.gameObject;
 		} else {
-			Camera.main.GetComponent<PlayerController>().Player = Camera.main.GetComponent<MainScript>().LoadedEntities[Camera.main.GetComponent<MainScript>().saveFile.uuid];
+			Camera.main.GetComponent<PlayerController>().Player = Camera.main.GetComponent<MainScript>().LoadedEntities[Camera.main.GetComponent<MetaNetworkManager>().localAccount.uuid];
 		}
 	}
 
 	[MessageHandler((ushort)MessageId.Join)]
 	private static void ProcessPlayerJoin(ushort sender, Message message) {
-		string uuid = connectedClients[sender].uuid;
-		MainScript.Map.Entity.Stickman entity = new MainScript.Map.Entity.Stickman(new Vector2(25000, 25000), 100f, connectedClients[sender].username, uuid, new AI.Null());
+		string uuid = Camera.main.GetComponent<MetaNetworkManager>().connectedClients[sender].account.uuid;
+		MainScript.Map.Entity.Stickman entity = new MainScript.Map.Entity.Stickman(new Vector2(25000, 25000), 100f, Camera.main.GetComponent<MetaNetworkManager>().connectedClients[sender].account.username, uuid, new AI.Null());
 		Camera.main.GetComponent<MainScript>().serverMap.entities.Add(uuid, entity);
 		Camera.main.GetComponent<NetworkManager>().playerEntities.Add(sender, uuid);
 		Message message1 = Message.Create(MessageSendMode.Reliable, MessageId.SpawnEntity);
