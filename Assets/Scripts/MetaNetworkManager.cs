@@ -137,7 +137,7 @@ public class MetaNetworkManager : MonoBehaviour {
 			Directory.CreateDirectory(Application.persistentDataPath + "/accounts");
 			connectedClients = new();
 			unassignedAccounts = new();
-			foreach (string accountDataPath in Directory.GetFiles(Application.persistentDataPath + "/accounts")) {
+			foreach (string accountDataPath in Directory.GetFiles(Application.persistentDataPath + "/accounts", "*.paperwars-account")) {
 				unassignedAccounts.Add(JsonUtility.FromJson<Account>(File.ReadAllText(accountDataPath)));
 			}
 	        StartHost();
@@ -167,34 +167,10 @@ public class MetaNetworkManager : MonoBehaviour {
 			Camera.main.GetComponent<MetaNetworkManager>().connectedClients[sender].version = version;
 		}
 	}
-
-	//[MessageHandler((ushort)MessageId.UUID)]
-	//private static void ProcessUUIDRequest(ushort sender, Message message) {
-		//if (Camera.main.GetComponent<MetaNetworkManager>().connectedClients[sender].Blacklisted) return;
-	    //message = Message.Create(MessageSendMode.Reliable, MessageId.UUID);
-	    //message.AddString(System.Guid.NewGuid().ToString());
-	    //Camera.main.GetComponent<MetaNetworkManager>().Server.Send(message, sender);
-	//}
-
-	//[MessageHandler((ushort)MessageId.UUID)]
-	//private static void ProcessUUID(Message message) {
-	    //Camera.main.GetComponent<MainScript>().saveFile = new MainScript.SaveFile(message.GetString());
-	    //File.WriteAllText(Application.persistentDataPath+"/save_file.paperwars-save",Base64.Encode(JsonUtility.ToJson(Camera.main.GetComponent<MainScript>().saveFile)));
-		//Camera.main.GetComponent<MenuScript>().UsernameField.text = Camera.main.GetComponent<MainScript>().saveFile.username;
-		//Camera.main.GetComponent<MetaNetworkManager>().SendChatMessage(Camera.main.GetComponent<MainScript>().saveFile.username + " has connected to the Main Server!");
-	//}
-
-	//private void SaveFile() {
-	//	File.WriteAllText(Application.persistentDataPath+"/save_file.paperwars-save",Base64.Encode(JsonUtility.ToJson(Camera.main.GetComponent<MainScript>().saveFile)));
-	//}
-
 	public void SendChatMessage(string message) {
 		Message message1 = Message.Create(MessageSendMode.Reliable, MessageId.ChatMessage);
 		message1.AddString(message);
 		Client.Send(message1);
-		//GameObject message2 = Instantiate(Camera.main.GetComponent<MetaNetworkManager>().ChatText);
-		//message2.GetComponent<TMP_Text>().text = message;
-		//message2.transform.SetParent(Camera.main.GetComponent<MetaNetworkManager>().ChatContent.transform, false);
 	}
 
 	[MessageHandler((ushort)MessageId.ChatMessage)]
@@ -448,11 +424,6 @@ public class MetaNetworkManager : MonoBehaviour {
     private void DidConnect(object sender, EventArgs e) {
 	    MainScript.PrintMessage("Connected to The Main Server!");
 	    LoginCanvas.SetActive(true);
-		//} else {
-		//	InvokeRepeating("SaveFile", 5f, 5f);
-		//	GetComponent<MenuScript>().UsernameField.text = GetComponent<MainScript>().saveFile.username;
-		//	SendChatMessage(GetComponent<MainScript>().saveFile.username + " has connected to the Main Server!");
-		//}
     }
 
     private void FailedToConnect(object sender, ConnectionFailedEventArgs e) {
@@ -478,6 +449,9 @@ public class MetaNetworkManager : MonoBehaviour {
 			switch (reason) {
 				case 0:
 					MainScript.PrintMessageError("Disconnected from The Main Server! Reason: Blocked Version.");
+					break;
+				default:
+					MainScript.PrintMessageError("Disconnected from The Main Server! Reason: Unknown.");
 					break;
 			}
 		}
