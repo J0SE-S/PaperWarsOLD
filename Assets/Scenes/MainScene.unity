@@ -5731,11 +5731,11 @@ MonoBehaviour:
   SignupUsernameField: {fileID: 346503836}
   SignupPasswordField: {fileID: 145298546}
   ServerFailedConnectCanvas: {fileID: 164191445}
+  MessageSendingScrollbarVertical: {fileID: 278575698}
   ChatContent: {fileID: 345531679}
   ChatText: {fileID: 5219684679771344045, guid: a20803fd439a84f18ae676596f13ec97, type: 3}
   JoinServerContent: {fileID: 1711665798}
   ServerButton: {fileID: 5834612567485069439, guid: 5b4144b1a417c41838c97915ae61f7ff, type: 3}
-  blacklistedClients: 
   blacklistedVersions: []
   secret: 
 --- !u!114 &519420037

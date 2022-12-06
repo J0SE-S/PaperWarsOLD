@@ -57,7 +57,7 @@ public class NetworkManager : MonoBehaviour {
         }
     }
 
-    [SerializeField] private ushort port;
+    public ushort port;
 	[SerializeField] private ushort maxPlayers;
 	public GameObject GameCanvas;
 	public GameObject GameGrid;

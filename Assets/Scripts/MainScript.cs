@@ -346,7 +346,7 @@ public class MainScript : MonoBehaviour {
 		LoadedEntities = new Dictionary<string, GameObject>();
 		GetComponent<NetworkManager>().Start2();
 		SendMessageField.onSubmit.AddListener(SendMessageToServer);
-		versionDisplay.text = "v" + currentVersion;
+		versionDisplay.text = currentVersion.ToString();
     }
 
     // Update is called once per frame

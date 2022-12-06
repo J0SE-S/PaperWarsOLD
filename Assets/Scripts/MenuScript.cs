@@ -94,11 +94,11 @@ public class MenuScript : MonoBehaviour {
 		newMapSeedField.interactable = false;
 		createMapButton.interactable = false;
 		newMapBackButton.interactable = false;
-		MainScript.PrintMessage("Generating World...\n(Remember to port forward the port 35725 in your router settings!)");
+		MainScript.PrintMessage("Generating World...\n(Remember to port forward the port " + GetComponent<NetworkManager>().port + " in your router settings!)");
 		if (newMapNameField.text == "") {newMapNameField.text = "New Map";}
 		if (newMapSeedField.text == "") {newMapSeedField.text = new System.Random().Next().ToString();}
 		GetComponent<MainScript>().serverMap = GetComponent<MainScript>().GenerateMap(newMapNameField.text, int.Parse(newMapSeedField.text));
-		MainScript.PrintMessage("Starting Server...\n(Remember to port forward the port 35725 in your router settings!)");
+		MainScript.PrintMessage("Starting Server...\n(Remember to port forward the port " + GetComponent<NetworkManager>().port + " in your router settings!)");
 		GetComponent<NetworkManager>().StartHost();
 	}
 
