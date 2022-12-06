@@ -48,7 +48,9 @@ public class MetaNetworkManager : MonoBehaviour {
 				else return blacklisted;
 			}
 
-			set {blacklisted = value;}
+			set {
+				blacklisted = value;
+			}
 		}
 		public MainScript.Version version;
 
@@ -305,6 +307,7 @@ public class MetaNetworkManager : MonoBehaviour {
 		LoginPasswordField.text = "";
 		LoginCanvas.SetActive(true);
 		SignupCanvas.SetActive(false);
+		SignupMessage.text = "";
 	}
 
 	public void SwitchToSignUpCanvas() {
@@ -312,9 +315,21 @@ public class MetaNetworkManager : MonoBehaviour {
 		SignupPasswordField.text = "";
 		LoginCanvas.SetActive(false);
 		SignupCanvas.SetActive(true);
+		SignupMessage.text = "";
 	}
 
-	public void Login() {}
+	public void Login() {
+		if (LoginUsernameField.text == "") {
+			LoginMessage.text = "Please enter a username.";
+			return;
+		}
+		if (LoginPasswordField.text == "") {
+			LoginMessage.text = "Please enter a password.";
+			return;
+		}
+		Client.Send(Message.Create(MessageSendMode.Reliable, MessageId.LoginAccount).AddString(LoginUsernameField.text).AddString(LoginPasswordField.text));
+		LoginMessage.text = "";
+	}
 
 	public void SignUp() {
 		if (SignupUsernameField.text == "") {
@@ -329,6 +344,51 @@ public class MetaNetworkManager : MonoBehaviour {
 		SignupMessage.text = "";
 	}
 
+	[MessageHandler((ushort)MessageId.LoginAccount)]
+	private static void ProcessAccountLogin(ushort sender, Message message) {
+		string username = message.GetString();
+		string password = message.GetString();
+		foreach (ClientData clientData in Camera.main.GetComponent<MetaNetworkManager>().connectedClients.Values) {
+			if (clientData.account != null) {
+				if (username == clientData.account.username && password == clientData.account.password) {
+					Camera.main.GetComponent<MetaNetworkManager>().Server.Send(AddAccount(Message.Create(MessageSendMode.Reliable, MessageId.LoginAccount).AddByte(0), clientData.account), sender);
+					return;
+				}
+			}
+		}
+		Camera.main.GetComponent<MetaNetworkManager>().Server.Send(Message.Create(MessageSendMode.Reliable, MessageId.LoginAccount).AddByte(1), sender);
+	}
+
+	[MessageHandler((ushort)MessageId.LoginAccount)]
+	private static void ProcessAccountLoginResponse(Message message) {
+		switch (message.GetByte()) {
+			case 0:
+				Camera.main.GetComponent<MetaNetworkManager>().localAccount = GetAccount(message);
+				Camera.main.GetComponent<MetaNetworkManager>().LoginCanvas.SetActive(false);
+				Camera.main.GetComponent<MenuScript>().MainMenuCanvas.SetActive(true);
+				Camera.main.GetComponent<MetaNetworkManager>().SendChatMessage(Camera.main.GetComponent<MetaNetworkManager>().localAccount.username + " has connected to the Main Server!");
+				break;
+			case 1:
+				Camera.main.GetComponent<MetaNetworkManager>().LoginMessage.text = "Incorrect username/password!";
+				break;
+		}
+	}
+
+	public static Message AddAccount(Message message, Account account) {
+		message.AddString(account.uuid);
+		message.AddString(account.username);
+		message.AddString(account.password);
+		return message;
+	}
+
+	public static Account GetAccount(Message message) {
+		Account account = new Account(message.GetString(), message.GetString(), message.GetString());
+		account.uuid = message.GetString();
+		account.username = message.GetString();
+		account.password = message.GetString();
+		return account;
+	}
+
 	[MessageHandler((ushort)MessageId.RegisterAccount)]
 	private static void ProcessAccountRegister(ushort sender, Message message) {
 		string uuid;
@@ -338,19 +398,24 @@ public class MetaNetworkManager : MonoBehaviour {
 			uuid = System.Guid.NewGuid().ToString();
 		} while (File.Exists(Application.persistentDataPath + "/accounts/" + uuid + ".paperwars-account"));
 		foreach (ClientData clientData in Camera.main.GetComponent<MetaNetworkManager>().connectedClients.Values) {
-			if (username == clientData.account.username) {
-				Camera.main.GetComponent<MetaNetworkManager>().Server.Send(Message.Create(MessageSendMode.Reliable, MessageId.RegisterAccount).AddByte(1), sender);
-				return;
+			if (clientData.account != null) {
+				if (username == clientData.account.username) {
+					Camera.main.GetComponent<MetaNetworkManager>().Server.Send(Message.Create(MessageSendMode.Reliable, MessageId.RegisterAccount).AddByte(1), sender);
+					return;
+				}
 			}
 		}
 		Account account = new Account(uuid, username, password);
 		Camera.main.GetComponent<MetaNetworkManager>().connectedClients[sender].account = account;
 		File.WriteAllText(Application.persistentDataPath + "/accounts/" + uuid + ".paperwars-account", JsonUtility.ToJson(account));
+		Camera.main.GetComponent<MetaNetworkManager>().Server.Send(Message.Create(MessageSendMode.Reliable, MessageId.RegisterAccount).AddByte(0), sender);
 	}
 
 	[MessageHandler((ushort)MessageId.RegisterAccount)]
-	private static void ProcessAccountRegister(Message message) {
+	private static void ProcessAccountRegisterResponse(Message message) {
 		switch (message.GetByte()) {
+			case 0:
+				break;
 			case 1:
 				Camera.main.GetComponent<MetaNetworkManager>().SignupMessage.text = "Username already in use!";
 				break;
@@ -359,10 +424,7 @@ public class MetaNetworkManager : MonoBehaviour {
 
     private void DidConnect(object sender, EventArgs e) {
 	    MainScript.PrintMessage("Connected to The Main Server!");
-		//Client.Send(Message.Create(MessageSendMode.Reliable, MessageId.Secret).AddString(Camera.main.GetComponent<MetaNetworkManager>().secret));
 	    LoginCanvas.SetActive(true);
-	    //if (GetComponent<MainScript>().saveFile == null) {
-	    //    Client.Send(Message.Create(MessageSendMode.Reliable, MessageId.UUID));
 		//} else {
 		//	InvokeRepeating("SaveFile", 5f, 5f);
 		//	GetComponent<MenuScript>().UsernameField.text = GetComponent<MainScript>().saveFile.username;
