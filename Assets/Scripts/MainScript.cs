@@ -315,7 +315,6 @@ public class MainScript : MonoBehaviour {
 	public GameObject PlayerWaypoint;
 	public GameObject AirshipWaypoint;
 	public TMP_InputField SendMessageField;
-	public TMP_InputField UsernameField;
     [Range(0f, 1f)]
     [SerializeField] public float oreDensity;
     [Range(0f, 1f)]

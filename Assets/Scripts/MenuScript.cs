@@ -17,7 +17,6 @@ public class MenuScript : MonoBehaviour {
 	public GameObject LoadMapCanvas;
     public TMP_InputField newMapNameField;
     public TMP_InputField newMapSeedField;
-	public TMP_InputField UsernameField;
 	public TMP_Dropdown LoadMapDropdown;
 	public GameObject MessageSending;
     public Button HostServerButton;
