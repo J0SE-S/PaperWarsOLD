@@ -6,6 +6,7 @@ using System.IO;
 using System.Net;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
 using UnityEngine.UI;
@@ -104,7 +105,16 @@ public class NetworkManager : MonoBehaviour {
 
 	private void SaveMap() {
 	    if (Server.IsRunning) {
-			File.WriteAllText(Application.persistentDataPath + "/maps/" + GetComponent<MainScript>().serverMap.name + ".paperwars-map", Base64.Encode(JsonUtility.ToJson(GetComponent<MainScript>().serverMap)));
+			FileStream fs = new FileStream(Application.persistentDataPath + "/maps/" + GetComponent<MainScript>().serverMap.name + ".paperwars-map", FileMode.Create);
+			BinaryFormatter formatter = new BinaryFormatter();
+        	try {
+            	formatter.Serialize(fs, GetComponent<MainScript>().serverMap);
+        	} catch (SerializationException e) {
+            	Console.WriteLine("Failed to serialize. Reason: " + e.Message);
+            	throw;
+			} finally {
+				fs.Close();
+			}
 	    }
 	}
 

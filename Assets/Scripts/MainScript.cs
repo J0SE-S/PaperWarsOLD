@@ -107,8 +107,7 @@ public class MainScript : MonoBehaviour {
 			[Serializable]
 			public class Tree : Entity {
 				public Tree(Vector2 newPosition, string newUUID) {
-					position = newPosition;
-					position.z = -0.1f;
+					position = new Vector3S(newPosition.x, newPosition.y, -0.1f);
 					uuid = newUUID;
 					ai = new AI.Null();
 				}
@@ -129,8 +128,7 @@ public class MainScript : MonoBehaviour {
 				public byte color;
 
 				public Flower(Vector2 newPosition, byte newColor, string newUUID) {
-					position = newPosition;
-					position.z = 0.1f;
+					position = new Vector3S(newPosition.x, newPosition.y, 0.1f);
 					color = newColor;
 					uuid = newUUID;
 					ai = new AI.Null();
@@ -150,8 +148,7 @@ public class MainScript : MonoBehaviour {
 				public string displayName;
 
 				public Stickman(Vector2 newPosition, string newDisplayName, string newUUID) {
-					position = newPosition;
-					position.z = 0f;
+					position = new Vector3S(newPosition.x, newPosition.y, 0);
 					displayName = newDisplayName;
 					uuid = newUUID;
 					ai = new AI.Stickman();
@@ -159,8 +156,7 @@ public class MainScript : MonoBehaviour {
 				}
 
 				public Stickman(Vector2 newPosition, float newHealth, string newDisplayName, string newUUID) {
-					position = newPosition;
-					position.z = 0f;
+					position = new Vector3S(newPosition.x, newPosition.y, 0);
 					Health = newHealth;
 					displayName = newDisplayName;
 					uuid = newUUID;
@@ -169,8 +165,7 @@ public class MainScript : MonoBehaviour {
 				}
 
 				public Stickman(Vector2 newPosition, float newHealth, string newDisplayName, string newUUID, AI newAi) {
-					position = newPosition;
-					position.z = 0f;
+					position = new Vector3S(newPosition.x, newPosition.y, 0);
 					Health = newHealth;
 					displayName = newDisplayName;
 					ai = newAi;
@@ -205,8 +200,7 @@ public class MainScript : MonoBehaviour {
 				public float Height {get; set;}
 
 				public Airship(Vector2 newPosition, string newUUID) {
-					position = newPosition;
-					position.z = -0.3f;
+					position = new Vector3S(newPosition.x, newPosition.y, -0.3f);
 					Width = 50;
 					Height = 50;
 					uuid = newUUID;
@@ -225,8 +219,8 @@ public class MainScript : MonoBehaviour {
 			}
 
 			public AI ai;
-			private Vector3 position;
-			public Vector3 Position {
+			private Vector3S position;
+			public Vector3S Position {
 				get {return position;}
 				set {
 					position = new Vector3(value.x, value.y, position.z);
@@ -239,7 +233,7 @@ public class MainScript : MonoBehaviour {
 					}
 				}
 			}
-			public GameObject visualization;
+			[NonSerialized] public GameObject visualization;
 			public string uuid;
 
 			public abstract void Visualize();
@@ -338,6 +332,8 @@ public class MainScript : MonoBehaviour {
     // Start is called before the first frame update
     void Start() {
 		settings = new Settings();
+		if (!Directory.Exists(Application.persistentDataPath + "/maps"))
+			Directory.CreateDirectory(Application.persistentDataPath + "/maps");
 		if (!File.Exists(Application.persistentDataPath + "/settings.json")) {
 			File.WriteAllText(Application.persistentDataPath+"/settings.json",JsonUtility.ToJson(settings));
 		} else {
@@ -436,6 +432,7 @@ public class MainScript : MonoBehaviour {
 
     public void setSettingJoinServerOnHost(bool setting) {
 		settings.joinServerOnHost = setting;
+		File.WriteAllText(Application.persistentDataPath+"/settings.json",JsonUtility.ToJson(settings));
     }
 
     private FastNoiseLite GenerateNoiseMap(int seed, int octaves, float frequency) {

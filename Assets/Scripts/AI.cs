@@ -10,7 +10,9 @@ public interface AI {
         public void Execute(ref MainScript.Map.Entity visualization);
     }
 
+    [Serializable]
     public class Null : AI {
+        [Serializable]
         public class NullAIAction : AIAction {
             public void Execute(ref MainScript.Map.Entity visualization) {}
         }
@@ -54,11 +56,14 @@ public interface AI {
         }
     }*/
 
+    [Serializable]
     public class Stickman : AI {
+        [Serializable]
         public class StickmanAIAction : AIAction {
             public void Execute(ref MainScript.Map.Entity visualization) {}
         }
 
+        [Serializable]
         public class StickmanAITask {
             public enum StickmanAITaskType {
             }
