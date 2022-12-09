@@ -91,9 +91,10 @@ public class MetaNetworkManager : MonoBehaviour {
         }
     }
 
-    [SerializeField] private ushort port;
+	[SerializeField] private string address;
+	[SerializeField] private ushort port;
     [SerializeField] private ushort maxPlayers;
-	[SerializeField] private bool HostMainServer;
+	[SerializeField] private bool JoinMainServer;
 	public GameObject LoginCanvas;
 	public GameObject SignupCanvas;
 	public TMP_Text LoginMessage;
@@ -133,15 +134,14 @@ public class MetaNetworkManager : MonoBehaviour {
 
 	    servers = new List<ServerData>();
 #if UNITY_EDITOR
-	    if (HostMainServer) {
-			Directory.CreateDirectory(Application.persistentDataPath + "/accounts");
-			connectedClients = new();
-			unassignedAccounts = new();
-			foreach (string accountDataPath in Directory.GetFiles(Application.persistentDataPath + "/accounts", "*.paperwars-account")) {
-				unassignedAccounts.Add(JsonUtility.FromJson<Account>(File.ReadAllText(accountDataPath)));
-			}
-	        StartHost();
-	    } else {
+		Directory.CreateDirectory(Application.persistentDataPath + "/accounts");
+		connectedClients = new();
+		unassignedAccounts = new();
+		foreach (string accountDataPath in Directory.GetFiles(Application.persistentDataPath + "/accounts", "*.paperwars-account")) {
+			unassignedAccounts.Add(JsonUtility.FromJson<Account>(File.ReadAllText(accountDataPath)));
+		}
+	    StartHost();
+	    if (JoinMainServer) {
             JoinServer();
 	    }
 #else
@@ -277,13 +277,12 @@ public class MetaNetworkManager : MonoBehaviour {
     public void StartHost() {
 		connectedClients = new();
         Server.Start(port, maxPlayers);
-		Client.Connect($"127.0.0.1:{port}");
     }
 
 	public void JoinServer() {
 	    ServerFailedConnectCanvas.SetActive(false);
 	    MainScript.PrintMessage("Connecting to The Main Server...");
-	    Client.Connect($"71.217.34.150:{port}");
+	    Client.Connect($"{address}:{port}");
 	}
 
 	public void SwitchToLoginCanvas() {

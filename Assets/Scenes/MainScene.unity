@@ -5332,9 +5332,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e933841158f5241419779567e1a17d9b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  address: 71.217.69.49
   port: 35724
   maxPlayers: 100
-  HostMainServer: 1
+  JoinMainServer: 1
   LoginCanvas: {fileID: 1416893653}
   SignupCanvas: {fileID: 230280292}
   LoginMessage: {fileID: 1109820249}
@@ -8656,7 +8657,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1236639003}
   m_HandleRect: {fileID: 1236639002}
   m_Direction: 0
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:

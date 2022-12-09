@@ -10,8 +10,6 @@ using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
 using UnityEngine.UI;
-using Unity.IO.Compression;
-using Unity.Jobs;
 using Unity.Collections;
 
 public class NetworkManager : MonoBehaviour {
