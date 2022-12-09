@@ -84,6 +84,16 @@ public class NetworkManager : MonoBehaviour {
     }
 
     public void Start2() {
+		for (ushort i = 1; i <= 51; i++) {
+			if (i == 51) {
+				Application.Quit();
+			}
+			if (!File.Exists(Application.persistentDataPath + "/temp" + (35724 + i))) {
+				port = (ushort)(i + 35724);
+				File.Create(Application.persistentDataPath + "/temp" + (35724 + i));
+				break;
+			}
+		}
 		sendMaps = new();
 	    RiptideLogger.Initialize(Debug.Log, Debug.Log, Debug.LogWarning, Debug.LogError, false);
 
@@ -117,6 +127,10 @@ public class NetworkManager : MonoBehaviour {
 			}
 	    }
 	}
+
+	private void OnApplicationQuit() {
+        File.Delete(Application.persistentDataPath + "/temp" + GetComponent<NetworkManager>().port);
+    }
 
     private void FixedUpdate() {
         if (Server.IsRunning) {

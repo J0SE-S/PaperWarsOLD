@@ -49,6 +49,7 @@ public class MenuScript : MonoBehaviour {
         GetComponent<NetworkManager>().Client.Disconnect();
 		GetComponent<MetaNetworkManager>().Server.Stop();
         GetComponent<MetaNetworkManager>().Client.Disconnect();
+		File.Delete(Application.persistentDataPath + "/temp" + GetComponent<NetworkManager>().port);
 #if UNITY_EDITOR
 		UnityEditor.EditorApplication.isPlaying = false;
 #else

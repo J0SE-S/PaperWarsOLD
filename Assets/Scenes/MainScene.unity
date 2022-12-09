@@ -5261,7 +5261,6 @@ MonoBehaviour:
   PlayerWaypoint: {fileID: 2081797493990986558}
   AirshipWaypoint: {fileID: 3078958379254731619}
   SendMessageField: {fileID: 924279031}
-  UsernameField: {fileID: 0}
   oreDensity: 0.03
   oreVariability: 0.5
   treeDensity: 0.01
@@ -5291,7 +5290,6 @@ MonoBehaviour:
   LoadMapCanvas: {fileID: 1691297833}
   newMapNameField: {fileID: 1183948094}
   newMapSeedField: {fileID: 68020767}
-  UsernameField: {fileID: 0}
   LoadMapDropdown: {fileID: 1157645223}
   MessageSending: {fileID: 891724415}
   HostServerButton: {fileID: 1455934636}
@@ -5306,10 +5304,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 519420028}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e3b3c8867b6204d479ae9e2b6fd3403a, type: 3}
+  m_Script: {fileID: 11500000, guid: c6fd315c06b1041b1aa369ca26dcc4be, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  port: 35725
+  port: 0
   maxPlayers: 10
   GameCanvas: {fileID: 716706105}
   GameGrid: {fileID: 172721241}
