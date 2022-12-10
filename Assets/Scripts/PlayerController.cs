@@ -34,7 +34,8 @@ public class PlayerController : MonoBehaviour {
                 tempPosition.y = 49500.51f;
             }
             transform.position = tempPosition;
-            GetComponent<MainScript>().PlayerWaypoint.SetActive(false);
+            GetComponent<MainScript>().PlayerWaypoint.SetActive(true);
+            GetComponent<MainScript>().PlayerWaypoint.transform.localPosition = new Vector3(250 + transform.position.x * 150 / 50000, 95 + transform.position.y * 150 / 50000, -1.5f);
             if (GetComponent<MainScript>().buildingPlacementMode == false) {
                 GetComponent<NetworkManager>().Client.Send(Message.Create(MessageSendMode.Reliable, NetworkManager.MessageId.Join));
                 Player = null;
