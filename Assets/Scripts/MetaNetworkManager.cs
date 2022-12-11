@@ -3,6 +3,7 @@ using Riptide.Utils;
 using TMPro;
 using System;
 using System.IO;
+using System.Net;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -91,7 +92,7 @@ public class MetaNetworkManager : MonoBehaviour {
         }
     }
 
-	[SerializeField] private string address;
+	private string address;
 	[SerializeField] private ushort port;
     [SerializeField] private ushort maxPlayers;
 	[SerializeField] private bool JoinMainServer;
@@ -134,6 +135,9 @@ public class MetaNetworkManager : MonoBehaviour {
 
 	    servers = new List<ServerData>();
 #if UNITY_EDITOR
+		InvokeRepeating("UpdateIPAddress", 300f, 300f);
+		address = new WebClient().DownloadString("http://icanhazip.com").Replace("\r\n", "").Replace("\n", "").Replace("\r", "");
+		File.WriteAllText(Application.persistentDataPath + "/.ipaddress", address);
 		Directory.CreateDirectory(Application.persistentDataPath + "/accounts");
 		connectedClients = new();
 		unassignedAccounts = new();
@@ -145,6 +149,12 @@ public class MetaNetworkManager : MonoBehaviour {
             JoinServer();
 	    }
 #else
+		try {
+			address = new WebClient().DownloadString("https://raw.githubusercontent.com/J0SE-S/PaperWars/main/.ipaddress").Replace("\r\n", "").Replace("\n", "").Replace("\r", "");
+			File.WriteAllText(Application.persistentDataPath + "/.ipaddress", address);
+		} catch (Exception) {
+			address = File.ReadAllText(Application.persistentDataPath + "/.ipaddress");
+		}
 		JoinServer();
 #endif
 		GetComponent<MenuScript>().Start4();
@@ -155,6 +165,11 @@ public class MetaNetworkManager : MonoBehaviour {
             Server.Update();
 		Client.Update();
     }
+
+	private void UpdateIPAddress() {
+		address = new WebClient().DownloadString("http://icanhazip.com").Replace("\r\n", "").Replace("\n", "").Replace("\r", "");
+		File.WriteAllText(Application.persistentDataPath + "/.ipaddress", address);
+	}
 
 	[MessageHandler((ushort)MessageId.Version)]
 	private static void ProcessVersion(ushort sender, Message message) {

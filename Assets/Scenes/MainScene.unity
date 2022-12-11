@@ -5332,7 +5332,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e933841158f5241419779567e1a17d9b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  address: 71.217.69.49
   port: 35724
   maxPlayers: 100
   JoinMainServer: 1

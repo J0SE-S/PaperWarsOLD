@@ -82,6 +82,9 @@ public class NetworkManager : MonoBehaviour {
     }
 
     public void Start2() {
+#if UNITY_EDITOR
+		port = 35725;
+#else
 		for (ushort i = 1; i <= 51; i++) {
 			if (i == 51) {
 				Application.Quit();
@@ -92,6 +95,7 @@ public class NetworkManager : MonoBehaviour {
 				break;
 			}
 		}
+#endif
 		sendMaps = new();
 	    RiptideLogger.Initialize(Debug.Log, Debug.Log, Debug.LogWarning, Debug.LogError, false);
 
