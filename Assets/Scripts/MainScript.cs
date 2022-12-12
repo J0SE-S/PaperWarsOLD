@@ -309,6 +309,7 @@ public class MainScript : MonoBehaviour {
 	public Tilemap serverTilemap;
     public UnityEngine.Tilemaps.Tile[] tiles;
     public GameObject[] Entities;
+	public GameObject[] BuildingBlueprints;
 	public GameObject[] ServerEntities;
 	public Dictionary<string, GameObject> LoadedEntities;
 	public Dictionary<string, GameObject> ServerLoadedEntities;

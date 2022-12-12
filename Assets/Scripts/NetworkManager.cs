@@ -72,7 +72,8 @@ public class NetworkManager : MonoBehaviour {
 	public string hostedServerHostName;
 	public string hostedServerVersion;
 	public Dictionary<ushort, Coroutine> sendMaps;
-	public Dictionary<ushort, string> playerEntities; 
+	public Dictionary<ushort, string> playerEntities;
+	public Dictionary<ushort, ushort> connectedClients;
 
     public Server Server { get; private set; }
     public Client Client { get; private set; }
@@ -187,7 +188,13 @@ public class NetworkManager : MonoBehaviour {
 		GetComponent<MenuScript>().newMapBackButton.interactable = true;
 		Server.Start(port, maxPlayers);
 		MainScript.PrintMessage("Server Started!");
-		GetComponent<MetaNetworkManager>().SendStartServerData(hostedServerName, hostedServerHostName, new WebClient().DownloadString("http://icanhazip.com").Replace("\r\n", "").Replace("\n", "").Replace("\r", ""));
+		string address;
+		try {
+			address = new WebClient().DownloadString("http://icanhazip.com").Replace("\r\n", "").Replace("\n", "").Replace("\r", "");
+		} catch (Exception) {
+			address = new WebClient().DownloadString("https://api.ipify.org").Replace("\r\n", "").Replace("\n", "").Replace("\r", "");
+		}
+		GetComponent<MetaNetworkManager>().SendStartServerData(hostedServerName, hostedServerHostName, address);
 		GetComponent<MetaNetworkManager>().SendChatMessage(GetComponent<MetaNetworkManager>().localAccount.username + " has started the server \"" + hostedServerName + " | Hosted by: " + hostedServerHostName + " (" + hostedServerVersion + ")" + "\".");
 	}
 
@@ -348,7 +355,7 @@ public class NetworkManager : MonoBehaviour {
 	[MessageHandler((ushort)MessageId.Join)]
 	private static void ProcessPlayerJoin(Message message) {
 		if (message.GetByte() == 0) {
-			Camera.main.GetComponent<MainScript>().buildingPlacementBlueprint = Instantiate(Camera.main.GetComponent<MainScript>().Entities[5]);
+			Camera.main.GetComponent<MainScript>().buildingPlacementBlueprint = Instantiate(Camera.main.GetComponent<MainScript>().BuildingBlueprints[0]);
 			Camera.main.GetComponent<MainScript>().buildingPlacementMode = true;
 			Camera.main.GetComponent<MainScript>().buildingPlacementType = 0;
 			Camera.main.GetComponent<PlayerController>().Player = Camera.main.gameObject;
@@ -359,13 +366,14 @@ public class NetworkManager : MonoBehaviour {
 
 	[MessageHandler((ushort)MessageId.Join)]
 	private static void ProcessPlayerJoin(ushort sender, Message message) {
-		string uuid = Camera.main.GetComponent<MetaNetworkManager>().connectedClients[sender].account.uuid;
+		string uuid = Camera.main.GetComponent<NetworkManager>().connectedClients[sender].account.uuid;
 		MainScript.Map.Entity.Stickman entity = new MainScript.Map.Entity.Stickman(new Vector2(25000, 25000), 100f, Camera.main.GetComponent<MetaNetworkManager>().connectedClients[sender].account.username, uuid, new AI.Null());
 		Camera.main.GetComponent<MainScript>().serverMap.entities.Add(uuid, entity);
 		Camera.main.GetComponent<NetworkManager>().playerEntities.Add(sender, uuid);
 		Message message1 = Message.Create(MessageSendMode.Reliable, MessageId.SpawnEntity);
 		message1.AddFloat(entity.Position.x);
 		message1.AddFloat(entity.Position.y);
+		message1.AddBool(true);
 		Camera.main.GetComponent<NetworkManager>().Server.Send(message1, sender);
 		Camera.main.GetComponent<NetworkManager>().Server.Send(Message.Create(MessageSendMode.Reliable, MessageId.Join).AddByte(1), sender);
 	}
@@ -410,6 +418,9 @@ public class NetworkManager : MonoBehaviour {
 				break;
 			case 5:
 				new MainScript.Map.Entity.Airship(new Vector2(message.GetFloat(), message.GetFloat()), uuid).Visualize();
+				if (message.GetBool()) {
+					new MainScript.Map.Entity.Stickman(new Vector2(message.GetFloat(), message.GetFloat()), 0f, Camera.main.GetComponent<MetaNetworkManager>().localAccount.uuid, Camera.main.GetComponent<MetaNetworkManager>().localAccount.uuid, new AI.Null()).Visualize();
+				}
 				break;
 		}
 	}

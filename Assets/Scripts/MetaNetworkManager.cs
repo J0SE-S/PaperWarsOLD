@@ -135,8 +135,8 @@ public class MetaNetworkManager : MonoBehaviour {
 
 	    servers = new List<ServerData>();
 #if UNITY_EDITOR
+		UpdateIPAddress();
 		InvokeRepeating("UpdateIPAddress", 300f, 300f);
-		address = new WebClient().DownloadString("http://icanhazip.com").Replace("\r\n", "").Replace("\n", "").Replace("\r", "");
 		File.WriteAllText(Application.persistentDataPath + "/.ipaddress", address);
 		Directory.CreateDirectory(Application.persistentDataPath + "/accounts");
 		connectedClients = new();
@@ -167,7 +167,11 @@ public class MetaNetworkManager : MonoBehaviour {
     }
 
 	private void UpdateIPAddress() {
-		address = new WebClient().DownloadString("http://icanhazip.com").Replace("\r\n", "").Replace("\n", "").Replace("\r", "");
+		try {
+			address = new WebClient().DownloadString("http://icanhazip.com").Replace("\r\n", "").Replace("\n", "").Replace("\r", "");
+		} catch (Exception) {
+			address = new WebClient().DownloadString("https://api.ipify.org").Replace("\r\n", "").Replace("\n", "").Replace("\r", "");
+		}
 		File.WriteAllText(Application.persistentDataPath + "/.ipaddress", address);
 	}
 

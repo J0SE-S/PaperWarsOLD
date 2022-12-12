@@ -5002,6 +5002,8 @@ MonoBehaviour:
   - {fileID: 7164702189493536437, guid: 2353b564eead14700bd37d241dd7fe66, type: 3}
   - {fileID: 7164702189493536437, guid: 2353b564eead14700bd37d241dd7fe66, type: 3}
   - {fileID: 7164702189493536437, guid: 2353b564eead14700bd37d241dd7fe66, type: 3}
+  BuildingBlueprints:
+  - {fileID: 3649243834621026635, guid: 48583d524cf40420da30ceb2bd00028c, type: 3}
   ServerEntities:
   - {fileID: 6850588122899860777, guid: f6363983cad2340d188f4a49390ae6f8, type: 3}
   - {fileID: 7164702189493536437, guid: 2353b564eead14700bd37d241dd7fe66, type: 3}
