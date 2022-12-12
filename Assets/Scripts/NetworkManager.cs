@@ -233,20 +233,15 @@ public class NetworkManager : MonoBehaviour {
 	}
 
 	public IEnumerator SendMapData(ushort id) {
-	    for (int row = 0; row < 40; row++) {
-			for (int column = 0; column < 40; column++) {
-	            Message message = Message.Create(MessageSendMode.Reliable, MessageId.ChunkData);
-		    	message.AddInt(row);
-		    	message.AddInt(column);
-		    	for (int x = 0; x < 25; x++) {
-		        	for (int y = 0; y < 25; y++) {
-		    	    	message.AddByte(GetComponent<MainScript>().serverMap.tileMap(x+row*25,y+column*25));
-		        	}
-		    	}
-		    	Server.Send(message, id);
-	            yield return new WaitForSeconds(0.05F);
-			}
-	    }
+		Message message1 = Message.Create(MessageSendMode.Reliable, MessageId.ChunkData);
+    	message1.AddByte(0);
+    	message1.AddByte(0);
+    	for (int x = 0; x < 25; x++) {
+        	for (int y = 0; y < 25; y++) {
+    	    	message1.AddByte(GetComponent<MainScript>().serverMap.tileMap(x, y));
+        	}
+		}
+		Server.Send(message1, id);
 		foreach (MainScript.Map.Entity entity in GetComponent<MainScript>().serverMap.entities.Values) {
 	    	Message message = Message.Create(MessageSendMode.Reliable, MessageId.SpawnEntity);
 			string type = entity.GetType().FullName;
@@ -366,7 +361,8 @@ public class NetworkManager : MonoBehaviour {
 
 	[MessageHandler((ushort)MessageId.Join)]
 	private static void ProcessPlayerJoin(ushort sender, Message message) {
-		string uuid = Camera.main.GetComponent<NetworkManager>().connectedClients[sender].account.uuid;
+		//string uuid = Camera.main.GetComponent<NetworkManager>().connectedClients[sender].account.uuid;
+		string uuid = "";
 		MainScript.Map.Entity.Stickman entity = new MainScript.Map.Entity.Stickman(new Vector2(25000, 25000), 100f, Camera.main.GetComponent<MetaNetworkManager>().connectedClients[sender].account.username, uuid, new AI.Null());
 		Camera.main.GetComponent<MainScript>().serverMap.entities.Add(uuid, entity);
 		Camera.main.GetComponent<NetworkManager>().playerEntities.Add(sender, uuid);
@@ -380,8 +376,8 @@ public class NetworkManager : MonoBehaviour {
 
 	[MessageHandler((ushort)MessageId.ChunkData)]
 	private static void ProcessChunkData(Message message) {
-	    int row = message.GetInt();
-	    int column = message.GetInt();
+	    byte row = message.GetByte();
+	    byte column = message.GetByte();
 	    byte data;
 	    byte[,] chunk = new byte[25, 25];
 		if (row == 0 && column == 0) {
@@ -398,6 +394,30 @@ public class NetworkManager : MonoBehaviour {
 		Camera.main.GetComponent<NetworkManager>().MinimapTexture.Apply();
 		Camera.main.GetComponent<NetworkManager>().Minimap.texture = Camera.main.GetComponent<NetworkManager>().MinimapTexture;
 	    Camera.main.GetComponent<MainScript>().LoadChunk(chunk, row, column);
+		Camera.main.GetComponent<NetworkManager>().Client.Send(Message.Create(MessageSendMode.Reliable, MessageId.ChunkData).AddByte(row).AddByte(column));
+	}
+
+	[MessageHandler((ushort)MessageId.ChunkData)]
+	private static void ProcessChunkDataResponse(ushort sender, Message message) {
+		byte row = message.GetByte();
+	    byte column = message.GetByte();
+		if (column >= 39) {
+			column = 0;
+			if (row >= 39) {
+				return;
+			} else {
+				row++;
+			}
+		} else {
+			column++;
+		}
+		message = Message.Create(MessageSendMode.Reliable, MessageId.ChunkData).AddByte(row).AddByte(column);
+		for (int x = 0; x < 25; x++) {
+        	for (int y = 0; y < 25; y++) {
+    	    	message.AddByte(Camera.main.GetComponent<MainScript>().serverMap.tileMap(x+row*25, y+column*25));
+        	}
+		}
+		Camera.main.GetComponent<NetworkManager>().Server.Send(message, sender);
 	}
 
 	[MessageHandler((ushort)MessageId.SpawnEntity)]
