@@ -31,12 +31,14 @@ public class MetaNetworkManager : MonoBehaviour {
 		public string username;
 		public string password;
 		public bool blacklisted;
+		public bool server;
 
 		public Account(string newUUID, string newUsername, string newPassword) {
 			uuid = newUUID;
 			username = newUsername;
 			password = newPassword;
 			blacklisted = false;
+			server = false;
 		}
 	}
 
@@ -227,7 +229,7 @@ public class MetaNetworkManager : MonoBehaviour {
 
 	[MessageHandler((ushort)MessageId.StartServer)]
 	private static void ProcessServerStart(ushort sender, Message message) {
-		if (Camera.main.GetComponent<MetaNetworkManager>().connectedClients[sender].Blacklisted) return;
+		if (Camera.main.GetComponent<MetaNetworkManager>().connectedClients[sender].Blacklisted || !Camera.main.GetComponent<MetaNetworkManager>().connectedClients[sender].account.server) return;
 	    Camera.main.GetComponent<MetaNetworkManager>().servers.Add(new ServerData(message.GetString(), message.GetString(), new MainScript.Version(message.GetByte(), message.GetByte(), message.GetByte(), (MainScript.Version.SubversionType) message.GetByte(), message.GetByte()), message.GetString(), sender));
 	}
 
@@ -352,6 +354,7 @@ public class MetaNetworkManager : MonoBehaviour {
 		string password = message.GetString();
 		foreach (Account account in Camera.main.GetComponent<MetaNetworkManager>().unassignedAccounts) {
 			if (username == account.username && password == account.password) {
+				Camera.main.GetComponent<MetaNetworkManager>().connectedClients[sender].account = account;
 				Camera.main.GetComponent<MetaNetworkManager>().Server.Send(AddAccount(Message.Create(MessageSendMode.Reliable, MessageId.LoginAccount).AddByte(0), account), sender);
 				return;
 			}
@@ -372,6 +375,9 @@ public class MetaNetworkManager : MonoBehaviour {
 		switch (message.GetByte()) {
 			case 0:
 				Camera.main.GetComponent<MetaNetworkManager>().localAccount = GetAccount(message);
+				if (Camera.main.GetComponent<MetaNetworkManager>().localAccount.server) {
+					Camera.main.GetComponent<MenuScript>().HostServerButton.gameObject.SetActive(true);
+				}
 				Camera.main.GetComponent<MetaNetworkManager>().LoginCanvas.SetActive(false);
 				Camera.main.GetComponent<MenuScript>().MainMenuCanvas.SetActive(true);
 				Camera.main.GetComponent<MetaNetworkManager>().SendChatMessage(Camera.main.GetComponent<MetaNetworkManager>().localAccount.username + " has connected to the Main Server!");
@@ -392,11 +398,14 @@ public class MetaNetworkManager : MonoBehaviour {
 		message.AddString(account.uuid);
 		message.AddString(account.username);
 		message.AddString(account.password);
+		message.AddBool(account.server);
 		return message;
 	}
 
 	public static Account GetAccount(Message message) {
-		return new Account(message.GetString(), message.GetString(), message.GetString());
+		Account account = new Account(message.GetString(), message.GetString(), message.GetString());
+		account.server = message.GetBool();
+		return account;
 	}
 
 	[MessageHandler((ushort)MessageId.RegisterAccount)]
@@ -461,7 +470,32 @@ public class MetaNetworkManager : MonoBehaviour {
 
     private void DidDisconnect(object sender, DisconnectedEventArgs e) {
 		if (e.Message == null) {
-	    	MainScript.PrintMessageError("Disconnected from The Main Server! Reason: Unknown.");
+	    	switch (e.Reason) {
+				case DisconnectReason.ConnectionRejected:
+					MainScript.PrintMessageError("Disconnected from The Main Server! Reason: Connection Denied.");
+					break;
+				case DisconnectReason.Disconnected:
+					MainScript.PrintMessageError("Disconnected from The Main Server! Reason: Self-Disconnection.");
+					break;
+				case DisconnectReason.Kicked:
+					MainScript.PrintMessageError("Disconnected from The Main Server! Reason: Connection Blocked.");
+					break;
+				case DisconnectReason.NeverConnected:
+					MainScript.PrintMessageError("Disconnected from The Main Server! Reason: No Connection.");
+					break;
+				case DisconnectReason.ServerStopped:
+					MainScript.PrintMessageError("Disconnected from The Main Server! Reason: Server Offline.");
+					break;
+				case DisconnectReason.TimedOut:
+					MainScript.PrintMessageError("Disconnected from The Main Server! Reason: Connection Timed Out.");
+					break;
+				case DisconnectReason.TransportError:
+					MainScript.PrintMessageError("Disconnected from The Main Server! Reason: Transport Error.");
+					break;
+				default:
+					MainScript.PrintMessageError("Disconnected from The Main Server! Reason: Unknown.");
+					break;
+			}
 		} else {
 			byte reason = e.Message.GetByte();
 			switch (reason) {

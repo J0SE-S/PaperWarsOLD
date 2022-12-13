@@ -73,7 +73,7 @@ public class NetworkManager : MonoBehaviour {
 	public string hostedServerVersion;
 	public Dictionary<ushort, Coroutine> sendMaps;
 	public Dictionary<ushort, string> playerEntities;
-	public Dictionary<ushort, ushort> connectedClients;
+	public Dictionary<ushort, MetaNetworkManager.Account> connectedClients;
 
     public Server Server { get; private set; }
     public Client Client { get; private set; }
@@ -361,8 +361,7 @@ public class NetworkManager : MonoBehaviour {
 
 	[MessageHandler((ushort)MessageId.Join)]
 	private static void ProcessPlayerJoin(ushort sender, Message message) {
-		//string uuid = Camera.main.GetComponent<NetworkManager>().connectedClients[sender].account.uuid;
-		string uuid = "";
+		string uuid = Camera.main.GetComponent<NetworkManager>().connectedClients[sender].uuid;
 		MainScript.Map.Entity.Stickman entity = new MainScript.Map.Entity.Stickman(new Vector2(25000, 25000), 100f, Camera.main.GetComponent<MetaNetworkManager>().connectedClients[sender].account.username, uuid, new AI.Null());
 		Camera.main.GetComponent<MainScript>().serverMap.entities.Add(uuid, entity);
 		Camera.main.GetComponent<NetworkManager>().playerEntities.Add(sender, uuid);
