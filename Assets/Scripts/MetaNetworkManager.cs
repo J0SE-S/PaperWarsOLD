@@ -12,14 +12,12 @@ using UnityEngine.UI;
 public class MetaNetworkManager : MonoBehaviour {
 	public class ServerData {
 	    public string name;
-	    public string username;
 		public MainScript.Version version;
 	    public string address;
 	    public ushort clientId;
 
-	    public ServerData(string serverName, string newUsername, MainScript.Version newVersion, string serverAddress, ushort newClientId = 0) {
+	    public ServerData(string serverName, MainScript.Version newVersion, string serverAddress, ushort newClientId = 0) {
 			name = serverName;
-			username = newUsername;
 			version = newVersion;
 			address = serverAddress;
 			clientId = newClientId;
@@ -210,10 +208,9 @@ public class MetaNetworkManager : MonoBehaviour {
 		Canvas.ForceUpdateCanvases();
 	}
 
-	public void SendStartServerData(string serverName, string userName, string serverAddress) {
+	public void SendStartServerData(string serverName, string serverAddress) {
 	    Message message = Message.Create(MessageSendMode.Reliable, MessageId.StartServer);
 	    message.AddString(serverName);
-	    message.AddString(userName);
 		message.AddByte(GetComponent<MainScript>().currentVersion.major);
 		message.AddByte(GetComponent<MainScript>().currentVersion.minor);
 		message.AddByte(GetComponent<MainScript>().currentVersion.patch);
@@ -230,7 +227,7 @@ public class MetaNetworkManager : MonoBehaviour {
 	[MessageHandler((ushort)MessageId.StartServer)]
 	private static void ProcessServerStart(ushort sender, Message message) {
 		if (Camera.main.GetComponent<MetaNetworkManager>().connectedClients[sender].Blacklisted || !Camera.main.GetComponent<MetaNetworkManager>().connectedClients[sender].account.server) return;
-	    Camera.main.GetComponent<MetaNetworkManager>().servers.Add(new ServerData(message.GetString(), message.GetString(), new MainScript.Version(message.GetByte(), message.GetByte(), message.GetByte(), (MainScript.Version.SubversionType) message.GetByte(), message.GetByte()), message.GetString(), sender));
+	    Camera.main.GetComponent<MetaNetworkManager>().servers.Add(new ServerData(message.GetString(), new MainScript.Version(message.GetByte(), message.GetByte(), message.GetByte(), (MainScript.Version.SubversionType) message.GetByte(), message.GetByte()), message.GetString(), sender));
 	}
 
 	[MessageHandler((ushort)MessageId.StopServer)]
@@ -246,7 +243,6 @@ public class MetaNetworkManager : MonoBehaviour {
 	    message.AddInt(Camera.main.GetComponent<MetaNetworkManager>().servers.Count);
 	    for (int i = 0; i < Camera.main.GetComponent<MetaNetworkManager>().servers.Count; i++) {
 	        message.AddString(Camera.main.GetComponent<MetaNetworkManager>().servers[i].name);
-			message.AddString(Camera.main.GetComponent<MetaNetworkManager>().servers[i].username);
 			message.AddByte(Camera.main.GetComponent<MetaNetworkManager>().servers[i].version.major);
 			message.AddByte(Camera.main.GetComponent<MetaNetworkManager>().servers[i].version.minor);
 			message.AddByte(Camera.main.GetComponent<MetaNetworkManager>().servers[i].version.patch);
@@ -262,7 +258,7 @@ public class MetaNetworkManager : MonoBehaviour {
 	    int maxI = message.GetInt();
 	    Camera.main.GetComponent<MetaNetworkManager>().servers = new List<ServerData>();
 	    for (int i = 0; i < maxI; i++) {
-	        Camera.main.GetComponent<MetaNetworkManager>().servers.Add(new ServerData(message.GetString(), message.GetString(), new MainScript.Version(message.GetByte(), message.GetByte(), message.GetByte(), (MainScript.Version.SubversionType) message.GetByte(), message.GetByte()), message.GetString()));
+	        Camera.main.GetComponent<MetaNetworkManager>().servers.Add(new ServerData(message.GetString(), new MainScript.Version(message.GetByte(), message.GetByte(), message.GetByte(), (MainScript.Version.SubversionType) message.GetByte(), message.GetByte()), message.GetString()));
 	    }
 	    Camera.main.GetComponent<MetaNetworkManager>().RefreshServerList();
 	}
@@ -273,8 +269,8 @@ public class MetaNetworkManager : MonoBehaviour {
  	    }
 	    foreach (ServerData data in servers) {
 			GameObject button = GameObject.Instantiate(ServerButton, JoinServerContent.GetComponent<Transform>());
-			button.GetComponentsInChildren<TMP_Text>()[0].text = data.name + " | Hosted by: " + data.username + " (" + data.version + ")";
-			button.GetComponent<Button>().onClick.AddListener(() => {GetComponent<MenuScript>().JoinServerConfirm(data.name, data.username, data.version, data.address);});
+			button.GetComponentsInChildren<TMP_Text>()[0].text = data.name + " (" + data.version + ")";
+			button.GetComponent<Button>().onClick.AddListener(() => {GetComponent<MenuScript>().JoinServerConfirm(data.name, data.version, data.address);});
 			if (!CompatibleVersion(GetComponent<MainScript>().currentVersion, data.version)) {
 				button.GetComponent<Button>().interactable = false;
 			}

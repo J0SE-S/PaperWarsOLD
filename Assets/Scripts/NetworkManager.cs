@@ -66,10 +66,8 @@ public class NetworkManager : MonoBehaviour {
 	public Texture2D MinimapTexture;
 	public RawImage Minimap;
 	public string connectedServerName;
-	public string connectedServerHostName;
 	public string connectedServerVersion;
 	public string hostedServerName;
-	public string hostedServerHostName;
 	public string hostedServerVersion;
 	public Dictionary<ushort, Coroutine> sendMaps;
 	public Dictionary<ushort, string> playerEntities;
@@ -172,7 +170,6 @@ public class NetworkManager : MonoBehaviour {
 			yield return new WaitForSeconds(0.002f);
 		}
 		hostedServerName = GetComponent<MainScript>().serverMap.name;
-		hostedServerHostName = GetComponent<MetaNetworkManager>().localAccount.username;
 		hostedServerVersion = GetComponent<MainScript>().currentVersion.ToString();
 		GetComponent<MenuScript>().HostServerButton.interactable = false;
 		MainScript.PrintMessage("Server Started!");
@@ -194,8 +191,8 @@ public class NetworkManager : MonoBehaviour {
 		} catch (Exception) {
 			address = new WebClient().DownloadString("https://api.ipify.org").Replace("\r\n", "").Replace("\n", "").Replace("\r", "");
 		}
-		GetComponent<MetaNetworkManager>().SendStartServerData(hostedServerName, hostedServerHostName, address);
-		GetComponent<MetaNetworkManager>().SendChatMessage(GetComponent<MetaNetworkManager>().localAccount.username + " has started the server \"" + hostedServerName + " | Hosted by: " + hostedServerHostName + " (" + hostedServerVersion + ")" + "\".");
+		GetComponent<MetaNetworkManager>().SendStartServerData(hostedServerName, address);
+		GetComponent<MetaNetworkManager>().SendChatMessage(GetComponent<MetaNetworkManager>().localAccount.username + " has started the server \"" + hostedServerName + " (" + hostedServerVersion + ")" + "\".");
 	}
 
     public void JoinGame(string ip) {
@@ -216,7 +213,7 @@ public class NetworkManager : MonoBehaviour {
 	    MainScript.PrintMessage("Joined Server!");
 	    GameCanvas.SetActive(true);
 		GetComponent<MenuScript>().MessageSending.SetActive(true);
-		GetComponent<MetaNetworkManager>().SendChatMessage(GetComponent<MetaNetworkManager>().localAccount.username + " has connected to server \"" + connectedServerName + " | Hosted by: " + connectedServerHostName + " (" + connectedServerVersion + ")" + "\".");
+		GetComponent<MetaNetworkManager>().SendChatMessage(GetComponent<MetaNetworkManager>().localAccount.username + " has connected to server \"" + connectedServerName + " (" + connectedServerVersion + ")" + "\".");
     }
 
     private void FailedToConnect(object sender, EventArgs e) {
@@ -296,7 +293,7 @@ public class NetworkManager : MonoBehaviour {
 			serverReconnectionAttempts++;
 			JoinGame(connectedIp);
 	    }
-		GetComponent<MetaNetworkManager>().SendChatMessage(GetComponent<MetaNetworkManager>().localAccount.username + " has disconnected from server \"" + connectedServerName + " | Hosted by: " + connectedServerHostName + " (" + connectedServerVersion + ")" + "\".");
+		GetComponent<MetaNetworkManager>().SendChatMessage(GetComponent<MetaNetworkManager>().localAccount.username + " has disconnected from server \"" + connectedServerName + " (" + connectedServerVersion + ")" + "\".");
 	}
 
 	private static Color32 ToColor(byte color) {

@@ -102,10 +102,9 @@ public class MenuScript : MonoBehaviour {
 		GetComponent<NetworkManager>().StartHost();
 	}
 
-    public void JoinServerConfirm(string serverName, string serverHostName, MainScript.Version serverVersion, string ip) {
+    public void JoinServerConfirm(string serverName, MainScript.Version serverVersion, string ip) {
 		JoinServerCanvas.SetActive(false);
 		GetComponent<NetworkManager>().connectedServerName = serverName;
-		GetComponent<NetworkManager>().connectedServerHostName = serverHostName;
 		GetComponent<NetworkManager>().connectedServerVersion = serverVersion.ToString();
 		GetComponent<NetworkManager>().JoinGame(ip);
     }
