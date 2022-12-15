@@ -30,6 +30,7 @@ public class MetaNetworkManager : MonoBehaviour {
 		public string email;
 		public string username;
 		public string password;
+		public string verificationCode;
 		public bool verified;
 		public bool blacklisted;
 		public bool server;
@@ -39,6 +40,8 @@ public class MetaNetworkManager : MonoBehaviour {
 			email = newEmail;
 			username = newUsername;
 			password = newPassword;
+			System.Random generator = new System.Random();
+			verificationCode = generator.Next(0, 1000000).ToString("D6");
 			verified = false;
 			blacklisted = false;
 			server = false;
@@ -107,6 +110,7 @@ public class MetaNetworkManager : MonoBehaviour {
 	public TMP_Text SignupMessage;
 	public TMP_InputField LoginUsernameField;
 	public TMP_InputField LoginPasswordField;
+	public TMP_InputField SignupEmailField;
 	public TMP_InputField SignupUsernameField;
 	public TMP_InputField SignupPasswordField;
 	public GameObject ServerFailedConnectCanvas;
@@ -327,6 +331,7 @@ public class MetaNetworkManager : MonoBehaviour {
 	}
 
 	public void SwitchToSignUpCanvas() {
+		SignupEmailField.text = "";
 		SignupUsernameField.text = "";
 		SignupPasswordField.text = "";
 		LoginCanvas.SetActive(false);
@@ -348,6 +353,10 @@ public class MetaNetworkManager : MonoBehaviour {
 	}
 
 	public void SignUp() {
+		if (SignupEmailField.text == "") {
+			SignupMessage.text = "Please enter an email.";
+			return;
+		}
 		if (SignupUsernameField.text == "") {
 			SignupMessage.text = "Please enter a username.";
 			return;
@@ -356,7 +365,7 @@ public class MetaNetworkManager : MonoBehaviour {
 			SignupMessage.text = "Please enter a password.";
 			return;
 		}
-		Client.Send(Message.Create(MessageSendMode.Reliable, MessageId.RegisterAccount).AddString(SignupUsernameField.text).AddString(SignupPasswordField.text));
+		Client.Send(Message.Create(MessageSendMode.Reliable, MessageId.RegisterAccount).AddString(SignupEmailField.text).AddString(SignupUsernameField.text).AddString(SignupPasswordField.text));
 		SignupMessage.text = "";
 	}
 
@@ -408,6 +417,7 @@ public class MetaNetworkManager : MonoBehaviour {
 
 	public static Message AddAccount(Message message, Account account) {
 		message.AddString(account.uuid);
+		message.AddString(account.email);
 		message.AddString(account.username);
 		message.AddString(account.password);
 		message.AddBool(account.server);
@@ -415,7 +425,7 @@ public class MetaNetworkManager : MonoBehaviour {
 	}
 
 	public static Account GetAccount(Message message) {
-		Account account = new Account(message.GetString(), message.GetString(), message.GetString());
+		Account account = new Account(message.GetString(), message.GetString(), message.GetString(), message.GetString());
 		account.server = message.GetBool();
 		return account;
 	}
@@ -423,6 +433,7 @@ public class MetaNetworkManager : MonoBehaviour {
 	[MessageHandler((ushort)MessageId.RegisterAccount)]
 	private static void ProcessAccountRegister(ushort sender, Message message) {
 		string uuid;
+		string email = message.GetString();
 		string username = message.GetString();
 		string password = message.GetString();
 		do {
@@ -437,14 +448,19 @@ public class MetaNetworkManager : MonoBehaviour {
 			}
 		}
 		foreach (Account account1 in Camera.main.GetComponent<MetaNetworkManager>().unassignedAccounts) {
+			if (email == account1.email) {
+				Camera.main.GetComponent<MetaNetworkManager>().Server.Send(Message.Create(MessageSendMode.Reliable, MessageId.RegisterAccount).AddByte(2), sender);
+				return;
+			}
 			if (username == account1.username) {
 				Camera.main.GetComponent<MetaNetworkManager>().Server.Send(Message.Create(MessageSendMode.Reliable, MessageId.RegisterAccount).AddByte(1), sender);
 				return;
 			}
 		}
-		Account account = new Account(uuid, username, password);
+		Account account = new Account(uuid, email, username, password);
 		Camera.main.GetComponent<MetaNetworkManager>().unassignedAccounts.Add(account);
 		File.WriteAllText(Application.persistentDataPath + "/accounts/" + uuid + ".paperwars-account", JsonUtility.ToJson(account));
+		Camera.main.GetComponent<MetaNetworkManager>().SendEmail(email, "Welcome to PaperWars", "Welcome to PaperWars! Unless you didn't just create an account, which means you can ignore this email. But if you did just make an account, then welcome! Here is your verification code: " + account.verificationCode + ".");
 		Camera.main.GetComponent<MetaNetworkManager>().Server.Send(Message.Create(MessageSendMode.Reliable, MessageId.RegisterAccount).AddByte(0), sender);
 	}
 
@@ -456,6 +472,9 @@ public class MetaNetworkManager : MonoBehaviour {
 				break;
 			case 1:
 				Camera.main.GetComponent<MetaNetworkManager>().SignupMessage.text = "Username already in use!";
+				break;
+			case 2:
+				Camera.main.GetComponent<MetaNetworkManager>().SignupMessage.text = "Email already in use!";
 				break;
 		}
 	}
