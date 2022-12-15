@@ -4,6 +4,7 @@ using TMPro;
 using System;
 using System.IO;
 using System.Net;
+using System.Net.Mail;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -26,15 +27,19 @@ public class MetaNetworkManager : MonoBehaviour {
 
 	public class Account {
 		public string uuid;
+		public string email;
 		public string username;
 		public string password;
+		public bool verified;
 		public bool blacklisted;
 		public bool server;
 
-		public Account(string newUUID, string newUsername, string newPassword) {
+		public Account(string newUUID, string newEmail, string newUsername, string newPassword) {
 			uuid = newUUID;
+			email = newEmail;
 			username = newUsername;
 			password = newPassword;
+			verified = false;
 			blacklisted = false;
 			server = false;
 		}
@@ -165,6 +170,17 @@ public class MetaNetworkManager : MonoBehaviour {
             Server.Update();
 		Client.Update();
     }
+
+	public void SendEmail(string email, string subject, string body) {
+		var smtpClient = new SmtpClient("smtp.gmail.com", 587)
+		{
+			DeliveryMethod = SmtpDeliveryMethod.Network,
+			EnableSsl = true,
+			Credentials = new NetworkCredential("paperwars.mainserver@gmail.com", File.ReadAllText(Application.persistentDataPath + "/emailPassword.txt")),
+		};
+			
+		smtpClient.Send("paperwars.mainserver@gmail.com", email, subject, body);
+	}
 
 	private void UpdateIPAddress() {
 		try {
