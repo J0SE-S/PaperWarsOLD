@@ -30,8 +30,7 @@ public class MetaNetworkManager : MonoBehaviour {
 		public string email;
 		public string username;
 		public string password;
-		public string verificationCode;
-		public bool verified;
+		public bool mailingList;
 		public bool blacklisted;
 		public bool server;
 
@@ -40,9 +39,7 @@ public class MetaNetworkManager : MonoBehaviour {
 			email = newEmail;
 			username = newUsername;
 			password = newPassword;
-			System.Random generator = new System.Random();
-			verificationCode = generator.Next(0, 1000000).ToString("D6");
-			verified = false;
+			mailingList = false;
 			blacklisted = false;
 			server = false;
 		}
@@ -113,6 +110,7 @@ public class MetaNetworkManager : MonoBehaviour {
 	public TMP_InputField SignupEmailField;
 	public TMP_InputField SignupUsernameField;
 	public TMP_InputField SignupPasswordField;
+	public Toggle MailingListToggle;
 	public GameObject ServerFailedConnectCanvas;
 	public Scrollbar MessageSendingScrollbarVertical;
 	private List<ServerData> servers;
@@ -365,7 +363,7 @@ public class MetaNetworkManager : MonoBehaviour {
 			SignupMessage.text = "Please enter a password.";
 			return;
 		}
-		Client.Send(Message.Create(MessageSendMode.Reliable, MessageId.RegisterAccount).AddString(SignupEmailField.text).AddString(SignupUsernameField.text).AddString(SignupPasswordField.text));
+		Client.Send(Message.Create(MessageSendMode.Reliable, MessageId.RegisterAccount).AddString(SignupEmailField.text).AddString(SignupUsernameField.text).AddString(SignupPasswordField.text).AddBool(MailingListToggle.isOn));
 		SignupMessage.text = "";
 	}
 
@@ -421,12 +419,14 @@ public class MetaNetworkManager : MonoBehaviour {
 		message.AddString(account.username);
 		message.AddString(account.password);
 		message.AddBool(account.server);
+		message.AddBool(account.mailingList);
 		return message;
 	}
 
 	public static Account GetAccount(Message message) {
 		Account account = new Account(message.GetString(), message.GetString(), message.GetString(), message.GetString());
 		account.server = message.GetBool();
+		account.mailingList = message.GetBool();
 		return account;
 	}
 
@@ -436,6 +436,7 @@ public class MetaNetworkManager : MonoBehaviour {
 		string email = message.GetString();
 		string username = message.GetString();
 		string password = message.GetString();
+		bool mailingList = message.GetBool();
 		do {
 			uuid = System.Guid.NewGuid().ToString();
 		} while (File.Exists(Application.persistentDataPath + "/accounts/" + uuid + ".paperwars-account"));
@@ -458,9 +459,14 @@ public class MetaNetworkManager : MonoBehaviour {
 			}
 		}
 		Account account = new Account(uuid, email, username, password);
+		account.mailingList = mailingList;
 		Camera.main.GetComponent<MetaNetworkManager>().unassignedAccounts.Add(account);
 		File.WriteAllText(Application.persistentDataPath + "/accounts/" + uuid + ".paperwars-account", JsonUtility.ToJson(account));
-		Camera.main.GetComponent<MetaNetworkManager>().SendEmail(email, "Welcome to PaperWars", "Welcome to PaperWars! Unless you didn't just create an account, which means you can ignore this email. But if you did just make an account, then welcome! Here is your verification code: " + account.verificationCode + ".");
+		if (mailingList) {
+			Camera.main.GetComponent<MetaNetworkManager>().SendEmail(email, "Welcome to PaperWars", "Hello!\n\nThank you for signing up for PaperWars! An account has been created for you using this email address and the username \"" + username + "\". You have also been signed up to the mailing list. If you wish to change the account's settings, please reply to this email.");
+		} else {
+			Camera.main.GetComponent<MetaNetworkManager>().SendEmail(email, "Welcome to PaperWars", "Hello!\n\nThank you for signing up for PaperWars! An account has been created for you using this email address and the username \"" + username + "\". If you wish to change the account's settings, please reply to this email.");
+		}
 		Camera.main.GetComponent<MetaNetworkManager>().Server.Send(Message.Create(MessageSendMode.Reliable, MessageId.RegisterAccount).AddByte(0), sender);
 	}
 
