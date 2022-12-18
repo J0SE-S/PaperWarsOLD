@@ -15,12 +15,14 @@ public class MetaNetworkManager : MonoBehaviour {
 	    public string name;
 		public MainScript.Version version;
 	    public string address;
+		public ushort port;
 	    public ushort clientId;
 
-	    public ServerData(string serverName, MainScript.Version newVersion, string serverAddress, ushort newClientId = 0) {
+	    public ServerData(string serverName, MainScript.Version newVersion, string serverAddress, ushort newPort, ushort newClientId = 0) {
 			name = serverName;
 			version = newVersion;
 			address = serverAddress;
+			port = newPort;
 			clientId = newClientId;
 	    }
 	}
@@ -32,6 +34,7 @@ public class MetaNetworkManager : MonoBehaviour {
 		public string password;
 		public bool mailingList;
 		public bool blacklisted;
+		public bool admin;
 		public bool server;
 
 		public Account(string newUUID, string newEmail, string newUsername, string newPassword) {
@@ -41,6 +44,7 @@ public class MetaNetworkManager : MonoBehaviour {
 			password = newPassword;
 			mailingList = false;
 			blacklisted = false;
+			admin = false;
 			server = false;
 		}
 	}
@@ -118,6 +122,7 @@ public class MetaNetworkManager : MonoBehaviour {
 	public GameObject ChatText;
 	public GameObject JoinServerContent;
 	public GameObject ServerButton;
+	public GameObject AdminButton;
 	public Account localAccount;
 	public Dictionary<ushort, ClientData> connectedClients;
 	public List<Account> unassignedAccounts;
@@ -190,7 +195,7 @@ public class MetaNetworkManager : MonoBehaviour {
 		} catch (Exception) {
 			address = new WebClient().DownloadString("https://api.ipify.org").Replace("\r\n", "").Replace("\n", "").Replace("\r", "");
 		}
-		File.WriteAllText(Application.persistentDataPath + "/.ipaddress", address);
+		File.WriteAllText(Directory.GetParent(Application.dataPath) + "/.ipaddress", address);
 	}
 
 	[MessageHandler((ushort)MessageId.Version)]
@@ -226,7 +231,7 @@ public class MetaNetworkManager : MonoBehaviour {
 		Canvas.ForceUpdateCanvases();
 	}
 
-	public void SendStartServerData(string serverName, string serverAddress) {
+	public void SendStartServerData(string serverName, string serverAddress, ushort serverPort) {
 	    Message message = Message.Create(MessageSendMode.Reliable, MessageId.StartServer);
 	    message.AddString(serverName);
 		message.AddByte(GetComponent<MainScript>().currentVersion.major);
@@ -235,6 +240,7 @@ public class MetaNetworkManager : MonoBehaviour {
 		message.AddByte((byte) GetComponent<MainScript>().currentVersion.subversionType);
 		message.AddByte(GetComponent<MainScript>().currentVersion.subversion);
 	    message.AddString(serverAddress);
+		message.AddUShort(serverPort);
 	    Client.Send(message);
 	}
 
@@ -245,7 +251,7 @@ public class MetaNetworkManager : MonoBehaviour {
 	[MessageHandler((ushort)MessageId.StartServer)]
 	private static void ProcessServerStart(ushort sender, Message message) {
 		if (Camera.main.GetComponent<MetaNetworkManager>().connectedClients[sender].Blacklisted || !Camera.main.GetComponent<MetaNetworkManager>().connectedClients[sender].account.server) return;
-	    Camera.main.GetComponent<MetaNetworkManager>().servers.Add(new ServerData(message.GetString(), new MainScript.Version(message.GetByte(), message.GetByte(), message.GetByte(), (MainScript.Version.SubversionType) message.GetByte(), message.GetByte()), message.GetString(), sender));
+	    Camera.main.GetComponent<MetaNetworkManager>().servers.Add(new ServerData(message.GetString(), new MainScript.Version(message.GetByte(), message.GetByte(), message.GetByte(), (MainScript.Version.SubversionType) message.GetByte(), message.GetByte()), message.GetString(), message.GetUShort(), sender));
 	}
 
 	[MessageHandler((ushort)MessageId.StopServer)]
@@ -276,7 +282,7 @@ public class MetaNetworkManager : MonoBehaviour {
 	    int maxI = message.GetInt();
 	    Camera.main.GetComponent<MetaNetworkManager>().servers = new List<ServerData>();
 	    for (int i = 0; i < maxI; i++) {
-	        Camera.main.GetComponent<MetaNetworkManager>().servers.Add(new ServerData(message.GetString(), new MainScript.Version(message.GetByte(), message.GetByte(), message.GetByte(), (MainScript.Version.SubversionType) message.GetByte(), message.GetByte()), message.GetString()));
+			Camera.main.GetComponent<MetaNetworkManager>().servers.Add(new ServerData(message.GetString(), new MainScript.Version(message.GetByte(), message.GetByte(), message.GetByte(), (MainScript.Version.SubversionType) message.GetByte(), message.GetByte()), message.GetString(), message.GetUShort()));
 	    }
 	    Camera.main.GetComponent<MetaNetworkManager>().RefreshServerList();
 	}
@@ -397,6 +403,9 @@ public class MetaNetworkManager : MonoBehaviour {
 				if (Camera.main.GetComponent<MetaNetworkManager>().localAccount.server) {
 					Camera.main.GetComponent<MenuScript>().HostServerButton.gameObject.SetActive(true);
 				}
+				if (Camera.main.GetComponent<MetaNetworkManager>().localAccount.admin) {
+					Camera.main.GetComponent<MetaNetworkManager>().AdminButton.SetActive(true);
+				}
 				Camera.main.GetComponent<MetaNetworkManager>().LoginCanvas.SetActive(false);
 				Camera.main.GetComponent<MenuScript>().MainMenuCanvas.SetActive(true);
 				Camera.main.GetComponent<MetaNetworkManager>().SendChatMessage(Camera.main.GetComponent<MetaNetworkManager>().localAccount.username + " has connected to the Main Server!");
@@ -418,6 +427,7 @@ public class MetaNetworkManager : MonoBehaviour {
 		message.AddString(account.email);
 		message.AddString(account.username);
 		message.AddString(account.password);
+		message.AddBool(account.admin);
 		message.AddBool(account.server);
 		message.AddBool(account.mailingList);
 		return message;
@@ -425,6 +435,7 @@ public class MetaNetworkManager : MonoBehaviour {
 
 	public static Account GetAccount(Message message) {
 		Account account = new Account(message.GetString(), message.GetString(), message.GetString(), message.GetString());
+		account.admin = message.GetBool();
 		account.server = message.GetBool();
 		account.mailingList = message.GetBool();
 		return account;
@@ -538,6 +549,9 @@ public class MetaNetworkManager : MonoBehaviour {
 			switch (reason) {
 				case 0:
 					MainScript.PrintMessageError("Disconnected from The Main Server! Reason: Blocked Version.");
+					break;
+				case 1:
+					MainScript.PrintMessageError("Disconnected from The Main Server! Reason: Disconnected by Admin.");
 					break;
 				default:
 					MainScript.PrintMessageError("Disconnected from The Main Server! Reason: Unknown.");

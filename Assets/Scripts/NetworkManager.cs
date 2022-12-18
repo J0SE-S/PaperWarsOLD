@@ -191,7 +191,7 @@ public class NetworkManager : MonoBehaviour {
 		} catch (Exception) {
 			address = new WebClient().DownloadString("https://api.ipify.org").Replace("\r\n", "").Replace("\n", "").Replace("\r", "");
 		}
-		GetComponent<MetaNetworkManager>().SendStartServerData(hostedServerName, address);
+		GetComponent<MetaNetworkManager>().SendStartServerData(hostedServerName, address, port);
 		GetComponent<MetaNetworkManager>().SendChatMessage(GetComponent<MetaNetworkManager>().localAccount.username + " has started the server \"" + hostedServerName + " (" + hostedServerVersion + ")" + "\".");
 	}
 

@@ -12,6 +12,7 @@ public class MenuScript : MonoBehaviour {
     public GameObject HostServerCanvas;
     public GameObject JoinServerCanvas;
     public GameObject SettingsCanvas;
+	public GameObject AdminPanel;
 	public Toggle JoinServerOnHost;
     public GameObject NewMapCanvas;
 	public GameObject LoadMapCanvas;
@@ -57,6 +58,11 @@ public class MenuScript : MonoBehaviour {
 #endif
     }
 
+	public void OpenAdminPanel() {
+		AdminPanel.SetActive(true);
+		MainMenuCanvas.SetActive(false);
+	}
+
     public void BackToMainMenu() {
 		HostServerCanvas.SetActive(false);
 		NewMapCanvas.SetActive(false);
@@ -64,6 +70,7 @@ public class MenuScript : MonoBehaviour {
 		SettingsCanvas.SetActive(false);
 		MainMenuCanvas.SetActive(true);
 		MessageSending.SetActive(true);
+		AdminPanel.SetActive(false);
     }
 
     public void BackToHostServer() {
