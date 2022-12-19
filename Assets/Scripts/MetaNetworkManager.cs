@@ -121,7 +121,7 @@ public class MetaNetworkManager : MonoBehaviour {
 	public GameObject ChatContent;
 	public GameObject ChatText;
 	public GameObject JoinServerContent;
-	public GameObject ServerButton;
+	public GameObject ButtonPrefab;
 	public GameObject AdminButton;
 	public GameObject OnlineAccountScrollViewContent;
 	public GameObject OfflineAccountScrollViewContent;
@@ -295,7 +295,7 @@ public class MetaNetworkManager : MonoBehaviour {
      		GameObject.Destroy(child.gameObject);
  	    }
 	    foreach (ServerData data in servers) {
-			GameObject button = GameObject.Instantiate(ServerButton, JoinServerContent.GetComponent<Transform>());
+			GameObject button = GameObject.Instantiate(ButtonPrefab, JoinServerContent.GetComponent<Transform>());
 			button.GetComponentsInChildren<TMP_Text>()[0].text = data.name + " (" + data.version + ")";
 			button.GetComponent<Button>().onClick.AddListener(() => {GetComponent<MenuScript>().JoinServerConfirm(data.name, data.version, data.address);});
 			if (!CompatibleVersion(GetComponent<MainScript>().currentVersion, data.version)) {

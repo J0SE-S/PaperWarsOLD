@@ -68,8 +68,31 @@ public class MenuScript : MonoBehaviour {
 
 	public void OpenAccountAdminPanel() {
 		AdminPanel.SetActive(false);
+		foreach (Transform child in GetComponent<MetaNetworkManager>().OnlineAccountScrollViewContent.transform) {
+     		GameObject.Destroy(child.gameObject);
+ 	    }
+		 foreach (Transform child in GetComponent<MetaNetworkManager>().OfflineAccountScrollViewContent.transform) {
+     		GameObject.Destroy(child.gameObject);
+ 	    }
+	    foreach (var data in GetComponent<MetaNetworkManager>().connectedClients) {
+			GameObject button = GameObject.Instantiate(GetComponent<MetaNetworkManager>().ButtonPrefab, GetComponent<MetaNetworkManager>().OnlineAccountScrollViewContent.GetComponent<Transform>());
+			button.GetComponentsInChildren<TMP_Text>()[0].text = data.Value.account.uuid + " (" + data.Value.account.username + ")";
+			button.GetComponent<Button>().onClick.AddListener(() => {OpenOnlineAccountPanel(data.Key);});
+			((RectTransform)button.transform).sizeDelta = new Vector2(400f, 30f);
+	    }
+		for (int i = 0; i < GetComponent<MetaNetworkManager>().unassignedAccounts.Count; i++) {
+			var data = GetComponent<MetaNetworkManager>().unassignedAccounts[i];
+			GameObject button = GameObject.Instantiate(GetComponent<MetaNetworkManager>().ButtonPrefab, GetComponent<MetaNetworkManager>().OfflineAccountScrollViewContent.GetComponent<Transform>());
+			button.GetComponentsInChildren<TMP_Text>()[0].text = data.uuid + " (" + data.username + ")";
+			button.GetComponent<Button>().onClick.AddListener(() => {OpenOfflineAccountPanel(i);});
+			((RectTransform)button.transform).sizeDelta = new Vector2(400f, 30f);
+	    }
 		AccountAdminPanel.SetActive(true);
 	}
+
+	public void OpenOnlineAccountPanel(ushort id) {}
+
+	public void OpenOfflineAccountPanel(int id) {}
 
     public void BackToMainMenu() {
 		HostServerCanvas.SetActive(false);
