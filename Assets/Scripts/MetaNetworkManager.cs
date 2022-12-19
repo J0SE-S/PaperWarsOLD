@@ -123,6 +123,8 @@ public class MetaNetworkManager : MonoBehaviour {
 	public GameObject JoinServerContent;
 	public GameObject ServerButton;
 	public GameObject AdminButton;
+	public GameObject OnlineAccountScrollViewContent;
+	public GameObject OfflineAccountScrollViewContent;
 	public Account localAccount;
 	public Dictionary<ushort, ClientData> connectedClients;
 	public List<Account> unassignedAccounts;
@@ -157,6 +159,7 @@ public class MetaNetworkManager : MonoBehaviour {
 			unassignedAccounts.Add(JsonUtility.FromJson<Account>(File.ReadAllText(accountDataPath)));
 		}
 	    StartHost();
+		address = "192.168.4.62";
 	    if (JoinMainServer) {
             JoinServer();
 	    }
