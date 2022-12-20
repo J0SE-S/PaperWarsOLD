@@ -187,7 +187,6 @@ public class MetaNetworkManager : MonoBehaviour {
 			EnableSsl = true,
 			Credentials = new NetworkCredential("paperwars.mainserver@gmail.com", File.ReadAllText(Application.persistentDataPath + "/emailPassword.txt")),
 		};
-			
 		smtpClient.Send("paperwars.mainserver@gmail.com", email, subject, body);
 	}
 
@@ -275,6 +274,7 @@ public class MetaNetworkManager : MonoBehaviour {
 			message.AddByte((byte) Camera.main.GetComponent<MetaNetworkManager>().servers[i].version.subversionType);
 			message.AddByte(Camera.main.GetComponent<MetaNetworkManager>().servers[i].version.subversion);
 			message.AddString(Camera.main.GetComponent<MetaNetworkManager>().servers[i].address);
+			message.AddUShort(Camera.main.GetComponent<MetaNetworkManager>().servers[i].port);
 	    }
 	    Camera.main.GetComponent<MetaNetworkManager>().Server.Send(message, sender);
 	}
@@ -296,7 +296,7 @@ public class MetaNetworkManager : MonoBehaviour {
 	    foreach (ServerData data in servers) {
 			GameObject button = GameObject.Instantiate(ButtonPrefab, JoinServerContent.GetComponent<Transform>());
 			button.GetComponentsInChildren<TMP_Text>()[0].text = data.name + " (" + data.version + ")";
-			button.GetComponent<Button>().onClick.AddListener(() => {GetComponent<MenuScript>().JoinServerConfirm(data.name, data.version, data.address);});
+			button.GetComponent<Button>().onClick.AddListener(() => {GetComponent<MenuScript>().JoinServerConfirm(data.name, data.version, data.address, data.port);});
 			if (!CompatibleVersion(GetComponent<MainScript>().currentVersion, data.version)) {
 				button.GetComponent<Button>().interactable = false;
 			}

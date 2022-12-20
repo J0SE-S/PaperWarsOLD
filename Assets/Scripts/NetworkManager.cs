@@ -22,22 +22,21 @@ public class NetworkManager : MonoBehaviour {
 	    ChangeBlock
     }
 
-	/*public struct SendMapJob : IJob {
-		[DeallocateOnJobCompletion]
-		public NativeArray<byte> tileMap;
-		public NativeArray<byte> compressedTileMap;
+	public class ClientData {
+		public string uuid;
+		public string username;
+		public Coroutine sendMap;
+		public bool blacklisted;
+		public MainScript.Version version;
 
-		public void Execute() {
-			MemoryStream uncompressedDataStream = new MemoryStream(tileMap.ToArray());
-			MemoryStream compressedDataStream = new MemoryStream();
-			GZipStream compressor = new GZipStream(compressedDataStream, CompressionMode.Compress);
-			uncompressedDataStream.CopyTo(compressor);
-			NativeArray<byte> temp = new NativeArray<byte>(compressedDataStream.ToArray(), Allocator.Temp);
-			compressedTileMap = temp;
-			tileMap.Dispose();
-			temp.Dispose();
+		public ClientData(Coroutine newSendMap) {
+			uuid = "";
+			username = "";
+			sendMap = newSendMap;
+			blacklisted = false;
+			version = null;
 		}
-	}*/
+	}
 	
     private static NetworkManager _singleton;
     public static NetworkManager Singleton
@@ -63,15 +62,14 @@ public class NetworkManager : MonoBehaviour {
 	private bool serverOffline;
 	public byte serverReconnectionAttempts;
 	private string connectedIp;
+	private ushort connectedPort;
 	public Texture2D MinimapTexture;
 	public RawImage Minimap;
 	public string connectedServerName;
 	public string connectedServerVersion;
 	public string hostedServerName;
 	public string hostedServerVersion;
-	public Dictionary<ushort, Coroutine> sendMaps;
-	public Dictionary<ushort, string> playerEntities;
-	public Dictionary<ushort, MetaNetworkManager.Account> connectedClients;
+	public Dictionary<ushort, ClientData> connectedClients;
 
     public Server Server { get; private set; }
     public Client Client { get; private set; }
@@ -82,22 +80,8 @@ public class NetworkManager : MonoBehaviour {
 
     public void Start2() {
 #if UNITY_EDITOR
-		port = 35725;
-#else
-		for (ushort i = 1; i <= 51; i++) {
-			if (i == 51) {
-				Application.Quit();
-			}
-			if (!File.Exists(Application.persistentDataPath + "/temp" + (35724 + i))) {
-				port = (ushort)(i + 35724);
-				File.Create(Application.persistentDataPath + "/temp" + (35724 + i));
-				break;
-			}
-		}
+		RiptideLogger.Initialize(Debug.Log, Debug.Log, Debug.LogWarning, Debug.LogError, false);
 #endif
-		sendMaps = new();
-	    RiptideLogger.Initialize(Debug.Log, Debug.Log, Debug.LogWarning, Debug.LogError, false);
-
         Server = new Server();
         Server.ClientConnected += PlayerJoined;
 	    Server.ClientDisconnected += PlayerLeft;
@@ -105,7 +89,7 @@ public class NetworkManager : MonoBehaviour {
         Client = new Client();
         Client.Connected += DidConnect;
         Client.ConnectionFailed += FailedToConnect;
-        Client.ClientDisconnected += OtherPlayerLeft;
+        //Client.ClientDisconnected += OtherPlayerLeft;
         Client.Disconnected += DidDisconnect;
 
 	    serverOffline = true;
@@ -148,6 +132,16 @@ public class NetworkManager : MonoBehaviour {
     }
 
     public void StartHost() {
+		for (ushort i = 1; i <= 51; i++) {
+			if (i == 51) {
+				Application.Quit();
+			}
+			if (!File.Exists(Application.persistentDataPath + "/temp" + (35724 + i))) {
+				port = (ushort)(i + 35724);
+				File.Create(Application.persistentDataPath + "/temp" + (35724 + i));
+				break;
+			}
+		}
 		StartCoroutine("StartHost2");
 	}
 
@@ -173,9 +167,9 @@ public class NetworkManager : MonoBehaviour {
 		hostedServerVersion = GetComponent<MainScript>().currentVersion.ToString();
 		GetComponent<MenuScript>().HostServerButton.interactable = false;
 		MainScript.PrintMessage("Server Started!");
-		playerEntities = new();
+		connectedClients = new();
 		if (GetComponent<MainScript>().settings.joinServerOnHost) {
-			JoinGame("127.0.0.1");
+			JoinGame("127.0.0.1", port);
 		} else {
 			GetComponent<MenuScript>().BackToMainMenu();
 		}
@@ -195,10 +189,11 @@ public class NetworkManager : MonoBehaviour {
 		GetComponent<MetaNetworkManager>().SendChatMessage(GetComponent<MetaNetworkManager>().localAccount.username + " has started the server \"" + hostedServerName + " (" + hostedServerVersion + ")" + "\".");
 	}
 
-    public void JoinGame(string ip) {
+    public void JoinGame(string ip, ushort portNum) {
 	    MainScript.PrintMessage("Joining Server...");
-        Client.Connect($"{ip}:{port}");
+        Client.Connect($"{ip}:{portNum}");
 	    connectedIp = ip;
+		connectedPort = portNum;
     }
 
     public void LeaveGame() {
@@ -218,15 +213,16 @@ public class NetworkManager : MonoBehaviour {
 
     private void FailedToConnect(object sender, EventArgs e) {
 	    connectedIp = "";
+		connectedPort = 0;
 	}
 
     private void PlayerJoined(object sender, ServerConnectedEventArgs e) {
-		sendMaps.Add(e.Client.Id, StartCoroutine("SendMapData", e.Client.Id));
+		connectedClients.Add(e.Client.Id, new ClientData(StartCoroutine("SendMapData", e.Client.Id)));
 	}
 
 	private void PlayerLeft(object sender, ServerDisconnectedEventArgs e) {
-	    StopCoroutine(sendMaps[e.Client.Id]);
-		sendMaps.Remove(e.Client.Id);
+	    StopCoroutine(connectedClients[e.Client.Id].sendMap);
+		connectedClients.Remove(e.Client.Id);
 	}
 
 	public IEnumerator SendMapData(ushort id) {
@@ -275,7 +271,7 @@ public class NetworkManager : MonoBehaviour {
 		Server.Send(Message.Create(MessageSendMode.Reliable, MessageId.Join).AddByte(0), id);
 	}
 
-    private void OtherPlayerLeft(object sender, ClientDisconnectedEventArgs e) {}
+    //private void OtherPlayerLeft(object sender, ClientDisconnectedEventArgs e) {}
 
     private void DidDisconnect(object sender, DisconnectedEventArgs e) {
 	    GetComponent<MainScript>().nonSolidTilemap.ClearAllTiles();
@@ -288,10 +284,11 @@ public class NetworkManager : MonoBehaviour {
 	        MainScript.PrintMessage("Disconnected.");
 	        GameCanvas.SetActive(false);
 			connectedIp = "";
+			connectedPort = 0;
 			GetComponent<MenuScript>().BackToMainMenu();
 	    } else {
 			serverReconnectionAttempts++;
-			JoinGame(connectedIp);
+			JoinGame(connectedIp, connectedPort);
 	    }
 		GetComponent<MetaNetworkManager>().SendChatMessage(GetComponent<MetaNetworkManager>().localAccount.username + " has disconnected from server \"" + connectedServerName + " (" + connectedServerVersion + ")" + "\".");
 	}
@@ -361,11 +358,12 @@ public class NetworkManager : MonoBehaviour {
 		string uuid = Camera.main.GetComponent<NetworkManager>().connectedClients[sender].uuid;
 		MainScript.Map.Entity.Stickman entity = new MainScript.Map.Entity.Stickman(new Vector2(25000, 25000), 100f, Camera.main.GetComponent<MetaNetworkManager>().connectedClients[sender].account.username, uuid, new AI.Null());
 		Camera.main.GetComponent<MainScript>().serverMap.entities.Add(uuid, entity);
-		Camera.main.GetComponent<NetworkManager>().playerEntities.Add(sender, uuid);
 		Message message1 = Message.Create(MessageSendMode.Reliable, MessageId.SpawnEntity);
 		message1.AddFloat(entity.Position.x);
 		message1.AddFloat(entity.Position.y);
 		message1.AddBool(true);
+		message1.AddFloat(entity.Position.x);
+		message1.AddFloat(entity.Position.y);
 		Camera.main.GetComponent<NetworkManager>().Server.Send(message1, sender);
 		Camera.main.GetComponent<NetworkManager>().Server.Send(Message.Create(MessageSendMode.Reliable, MessageId.Join).AddByte(1), sender);
 	}
