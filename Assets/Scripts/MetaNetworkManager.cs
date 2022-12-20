@@ -159,7 +159,6 @@ public class MetaNetworkManager : MonoBehaviour {
 			unassignedAccounts.Add(JsonUtility.FromJson<Account>(File.ReadAllText(accountDataPath)));
 		}
 	    StartHost();
-		address = "192.168.4.62";
 	    if (JoinMainServer) {
             JoinServer();
 	    }
@@ -384,6 +383,7 @@ public class MetaNetworkManager : MonoBehaviour {
 			if (username == account.username && password == account.password) {
 				Camera.main.GetComponent<MetaNetworkManager>().connectedClients[sender].account = account;
 				Camera.main.GetComponent<MetaNetworkManager>().Server.Send(AddAccount(Message.Create(MessageSendMode.Reliable, MessageId.LoginAccount).AddByte(0), account), sender);
+				Camera.main.GetComponent<MetaNetworkManager>().unassignedAccounts.Remove(account);
 				return;
 			}
 		}
@@ -516,7 +516,10 @@ public class MetaNetworkManager : MonoBehaviour {
 
 	public void PlayerLeft(object sender, ServerDisconnectedEventArgs e) {
 	    servers.RemoveAll(s => s.clientId == e.Client.Id);
-		connectedClients.Remove(e.Client.Id);
+		if (connectedClients.ContainsKey(e.Client.Id)) {
+			unassignedAccounts.Add(connectedClients[e.Client.Id].account);
+			connectedClients.Remove(e.Client.Id);
+		}
 	}
 
     private void DidDisconnect(object sender, DisconnectedEventArgs e) {

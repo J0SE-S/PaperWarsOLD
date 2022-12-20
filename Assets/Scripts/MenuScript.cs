@@ -14,6 +14,15 @@ public class MenuScript : MonoBehaviour {
     public GameObject SettingsCanvas;
 	public GameObject AdminPanel;
 	public GameObject AccountAdminPanel;
+	public GameObject OnlineAccountAdminPanel;
+	public GameObject OfflineAccountAdminPanel;
+	public TMP_Text OfflineAccountAdminPanelUUID;
+	public TMP_InputField OfflineAccountAdminPanelEmailField;
+	public TMP_InputField OfflineAccountAdminPanelUsernameField;
+	public TMP_InputField OfflineAccountAdminPanelPasswordField;
+	public Toggle OfflineAccountAdminPanelMailingList;
+	public Toggle OfflineAccountAdminPanelBlacklisted;
+	public Toggle OfflineAccountAdminPanelServer;
 	public Toggle JoinServerOnHost;
     public GameObject NewMapCanvas;
 	public GameObject LoadMapCanvas;
@@ -76,23 +85,51 @@ public class MenuScript : MonoBehaviour {
  	    }
 	    foreach (var data in GetComponent<MetaNetworkManager>().connectedClients) {
 			GameObject button = GameObject.Instantiate(GetComponent<MetaNetworkManager>().ButtonPrefab, GetComponent<MetaNetworkManager>().OnlineAccountScrollViewContent.GetComponent<Transform>());
-			button.GetComponentsInChildren<TMP_Text>()[0].text = data.Value.account.uuid + " (" + data.Value.account.username + ")";
+			button.GetComponentsInChildren<TMP_Text>()[0].text = data.Value.account.username + " (" + data.Value.account.uuid + ")";
 			button.GetComponent<Button>().onClick.AddListener(() => {OpenOnlineAccountPanel(data.Key);});
 			((RectTransform)button.transform).sizeDelta = new Vector2(400f, 30f);
 	    }
 		for (int i = 0; i < GetComponent<MetaNetworkManager>().unassignedAccounts.Count; i++) {
 			var data = GetComponent<MetaNetworkManager>().unassignedAccounts[i];
 			GameObject button = GameObject.Instantiate(GetComponent<MetaNetworkManager>().ButtonPrefab, GetComponent<MetaNetworkManager>().OfflineAccountScrollViewContent.GetComponent<Transform>());
-			button.GetComponentsInChildren<TMP_Text>()[0].text = data.uuid + " (" + data.username + ")";
-			button.GetComponent<Button>().onClick.AddListener(() => {OpenOfflineAccountPanel(i);});
+			button.GetComponentsInChildren<TMP_Text>()[0].text = data.username + " (" + data.uuid + ")";
+			button.GetComponent<Button>().onClick.AddListener(() => {OpenOfflineAccountPanel(i-1);});
 			((RectTransform)button.transform).sizeDelta = new Vector2(400f, 30f);
 	    }
 		AccountAdminPanel.SetActive(true);
+		OnlineAccountAdminPanel.SetActive(false);
+		OfflineAccountAdminPanel.SetActive(false);
 	}
 
-	public void OpenOnlineAccountPanel(ushort id) {}
+	public void OpenOnlineAccountPanel(ushort id) {
+		AccountAdminPanel.SetActive(false);
+		OnlineAccountAdminPanel.SetActive(true);
+		OfflineAccountAdminPanel.SetActive(false);
+	}
 
-	public void OpenOfflineAccountPanel(int id) {}
+	public void OpenOfflineAccountPanel(int id) {
+		AccountAdminPanel.SetActive(false);
+		OnlineAccountAdminPanel.SetActive(false);
+		OfflineAccountAdminPanel.SetActive(true);
+		MetaNetworkManager.Account account = GetComponent<MetaNetworkManager>().unassignedAccounts[id];
+		OfflineAccountAdminPanelUUID.text = account.uuid;
+		OfflineAccountAdminPanelEmailField.text = account.email;
+		OfflineAccountAdminPanelUsernameField.text = account.username;
+		OfflineAccountAdminPanelPasswordField.text = account.password;
+		OfflineAccountAdminPanelMailingList.isOn = account.mailingList;
+		OfflineAccountAdminPanelBlacklisted.isOn = account.blacklisted;
+		OfflineAccountAdminPanelServer.isOn = account.server;
+		OfflineAccountAdminPanelEmailField.onSubmit.RemoveAllListeners();
+		OfflineAccountAdminPanelUsernameField.onSubmit.RemoveAllListeners();
+		OfflineAccountAdminPanelPasswordField.onSubmit.RemoveAllListeners();
+		OfflineAccountAdminPanelBlacklisted.onValueChanged.RemoveAllListeners();
+		OfflineAccountAdminPanelServer.onValueChanged.RemoveAllListeners();
+		OfflineAccountAdminPanelEmailField.onSubmit.AddListener((string value) => {GetComponent<MetaNetworkManager>().unassignedAccounts[id].email = value;File.WriteAllText(Application.persistentDataPath + "/accounts/" + GetComponent<MetaNetworkManager>().unassignedAccounts[id].uuid + ".paperwars-account", JsonUtility.ToJson(GetComponent<MetaNetworkManager>().unassignedAccounts[id]));});
+		OfflineAccountAdminPanelUsernameField.onSubmit.AddListener((string value) => {GetComponent<MetaNetworkManager>().unassignedAccounts[id].username = value;File.WriteAllText(Application.persistentDataPath + "/accounts/" + GetComponent<MetaNetworkManager>().unassignedAccounts[id].uuid + ".paperwars-account", JsonUtility.ToJson(GetComponent<MetaNetworkManager>().unassignedAccounts[id]));});
+		OfflineAccountAdminPanelPasswordField.onSubmit.AddListener((string value) => {GetComponent<MetaNetworkManager>().unassignedAccounts[id].password = value;File.WriteAllText(Application.persistentDataPath + "/accounts/" + GetComponent<MetaNetworkManager>().unassignedAccounts[id].uuid + ".paperwars-account", JsonUtility.ToJson(GetComponent<MetaNetworkManager>().unassignedAccounts[id]));});
+		OfflineAccountAdminPanelBlacklisted.onValueChanged.AddListener((bool value) => {GetComponent<MetaNetworkManager>().unassignedAccounts[id].blacklisted = value;File.WriteAllText(Application.persistentDataPath + "/accounts/" + GetComponent<MetaNetworkManager>().unassignedAccounts[id].uuid + ".paperwars-account", JsonUtility.ToJson(GetComponent<MetaNetworkManager>().unassignedAccounts[id]));});
+		OfflineAccountAdminPanelServer.onValueChanged.AddListener((bool value) => {GetComponent<MetaNetworkManager>().unassignedAccounts[id].server = value;File.WriteAllText(Application.persistentDataPath + "/accounts/" + GetComponent<MetaNetworkManager>().unassignedAccounts[id].uuid + ".paperwars-account", JsonUtility.ToJson(GetComponent<MetaNetworkManager>().unassignedAccounts[id]));});
+	}
 
     public void BackToMainMenu() {
 		HostServerCanvas.SetActive(false);
