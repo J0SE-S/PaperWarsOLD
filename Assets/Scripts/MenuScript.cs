@@ -1,3 +1,5 @@
+using Riptide;
+using Riptide.Utils;
 using TMPro;
 using System.IO;
 using System.Collections;
@@ -8,13 +10,20 @@ using UnityEngine.UI;
 
 public class MenuScript : MonoBehaviour {
     public GameObject MainMenuCanvas;
-    public GameObject ServerLoadedCanvas;
     public GameObject HostServerCanvas;
     public GameObject JoinServerCanvas;
     public GameObject SettingsCanvas;
 	public GameObject AdminPanel;
 	public GameObject AccountAdminPanel;
 	public GameObject OnlineAccountAdminPanel;
+	public TMP_Text OnlineAccountAdminPanelUUID;
+	public TMP_InputField OnlineAccountAdminPanelEmailField;
+	public TMP_InputField OnlineAccountAdminPanelUsernameField;
+	public TMP_InputField OnlineAccountAdminPanelPasswordField;
+	public Toggle OnlineAccountAdminPanelMailingList;
+	public Toggle OnlineAccountAdminPanelBlacklisted;
+	public Toggle OnlineAccountAdminPanelServer;
+	public Button OnlineAccountAdminPanelDisconnect;
 	public GameObject OfflineAccountAdminPanel;
 	public TMP_Text OfflineAccountAdminPanelUUID;
 	public TMP_InputField OfflineAccountAdminPanelEmailField;
@@ -105,6 +114,16 @@ public class MenuScript : MonoBehaviour {
 		AccountAdminPanel.SetActive(false);
 		OnlineAccountAdminPanel.SetActive(true);
 		OfflineAccountAdminPanel.SetActive(false);
+		MetaNetworkManager.Account account = GetComponent<MetaNetworkManager>().connectedClients[id].account;
+		OnlineAccountAdminPanelUUID.text = account.uuid;
+		OnlineAccountAdminPanelEmailField.text = account.email;
+		OnlineAccountAdminPanelUsernameField.text = account.username;
+		OnlineAccountAdminPanelPasswordField.text = account.password;
+		OnlineAccountAdminPanelMailingList.isOn = account.mailingList;
+		OnlineAccountAdminPanelBlacklisted.isOn = account.blacklisted;
+		OnlineAccountAdminPanelServer.isOn = account.server;
+		OnlineAccountAdminPanelDisconnect.onClick.RemoveAllListeners();
+		OnlineAccountAdminPanelDisconnect.onClick.AddListener(() => {GetComponent<MetaNetworkManager>().Server.DisconnectClient(id, Message.Create().AddByte(1));});
 	}
 
 	public void OpenOfflineAccountPanel(int id) {

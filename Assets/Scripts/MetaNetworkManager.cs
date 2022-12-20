@@ -565,5 +565,18 @@ public class MetaNetworkManager : MonoBehaviour {
 			}
 		}
 	    ServerFailedConnectCanvas.SetActive(true);
+		LoginCanvas.SetActive(false);
+		SignupCanvas.SetActive(false);
+		GetComponent<MenuScript>().MainMenuCanvas.SetActive(false);
+		GetComponent<MenuScript>().AdminPanel.SetActive(false);
+		GetComponent<MenuScript>().AccountAdminPanel.SetActive(false);
+		GetComponent<MenuScript>().OnlineAccountAdminPanel.SetActive(false);
+		GetComponent<MenuScript>().OfflineAccountAdminPanel.SetActive(false);
+		GetComponent<MenuScript>().HostServerCanvas.SetActive(false);
+		GetComponent<MenuScript>().JoinServerCanvas.SetActive(false);
+		GetComponent<MenuScript>().SettingsCanvas.SetActive(false);
+		GetComponent<MenuScript>().NewMapCanvas.SetActive(false);
+		GetComponent<MenuScript>().LoadMapCanvas.SetActive(false);
+		GetComponent<NetworkManager>().GameCanvas.SetActive(false);
 	}
 }
