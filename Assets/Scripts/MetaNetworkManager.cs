@@ -77,6 +77,7 @@ public class MetaNetworkManager : MonoBehaviour {
 		Version = 100,
 		RegisterAccount,
 		LoginAccount,
+		SessionID,
 		ChatMessage,
 	    ServerList,
 	    StartServer,
@@ -126,6 +127,8 @@ public class MetaNetworkManager : MonoBehaviour {
 	public GameObject OnlineAccountScrollViewContent;
 	public GameObject OfflineAccountScrollViewContent;
 	public Account localAccount;
+	public int sessionID;
+	public Dictionary<int, ushort> sessionIDs;
 	public Dictionary<ushort, ClientData> connectedClients;
 	public List<Account> unassignedAccounts;
 	public List<MainScript.Version> blacklistedVersions;
@@ -155,6 +158,7 @@ public class MetaNetworkManager : MonoBehaviour {
 		Directory.CreateDirectory(Application.persistentDataPath + "/accounts");
 		connectedClients = new();
 		unassignedAccounts = new();
+		sessionIDs = new();
 		foreach (string accountDataPath in Directory.GetFiles(Application.persistentDataPath + "/accounts", "*.paperwars-account")) {
 			unassignedAccounts.Add(JsonUtility.FromJson<Account>(File.ReadAllText(accountDataPath)));
 		}
@@ -379,10 +383,11 @@ public class MetaNetworkManager : MonoBehaviour {
 	private static void ProcessAccountLogin(ushort sender, Message message) {
 		string username = message.GetString();
 		string password = message.GetString();
+		int newSessionID = new System.Random().Next();
 		foreach (Account account in Camera.main.GetComponent<MetaNetworkManager>().unassignedAccounts) {
 			if (username == account.username && password == account.password) {
 				Camera.main.GetComponent<MetaNetworkManager>().connectedClients[sender].account = account;
-				Camera.main.GetComponent<MetaNetworkManager>().Server.Send(AddAccount(Message.Create(MessageSendMode.Reliable, MessageId.LoginAccount).AddByte(0), account), sender);
+				Camera.main.GetComponent<MetaNetworkManager>().Server.Send(AddAccount(Message.Create(MessageSendMode.Reliable, MessageId.LoginAccount).AddByte(0), account).AddInt(newSessionID), sender);
 				Camera.main.GetComponent<MetaNetworkManager>().unassignedAccounts.Remove(account);
 				return;
 			}
@@ -403,6 +408,7 @@ public class MetaNetworkManager : MonoBehaviour {
 		switch (message.GetByte()) {
 			case 0:
 				Camera.main.GetComponent<MetaNetworkManager>().localAccount = GetAccount(message);
+				Camera.main.GetComponent<MetaNetworkManager>().sessionID = message.GetInt();
 				if (Camera.main.GetComponent<MetaNetworkManager>().localAccount.server) {
 					Camera.main.GetComponent<MenuScript>().HostServerButton.gameObject.SetActive(true);
 				}

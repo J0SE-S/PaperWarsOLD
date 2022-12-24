@@ -348,24 +348,26 @@ public class NetworkManager : MonoBehaviour {
 			Camera.main.GetComponent<MainScript>().buildingPlacementMode = true;
 			Camera.main.GetComponent<MainScript>().buildingPlacementType = 0;
 			Camera.main.GetComponent<PlayerController>().Player = Camera.main.gameObject;
-		} else {
-			Camera.main.GetComponent<PlayerController>().Player = Camera.main.GetComponent<MainScript>().LoadedEntities[Camera.main.GetComponent<MetaNetworkManager>().localAccount.uuid];
 		}
 	}
 
 	[MessageHandler((ushort)MessageId.Join)]
 	private static void ProcessPlayerJoin(ushort sender, Message message) {
 		string uuid = Camera.main.GetComponent<NetworkManager>().connectedClients[sender].uuid;
+		//Debug.Log(uuid);
+		//MainScript.Map.Entity.Airship entity = new MainScript.Map.Entity.Airship(new Vector2(25000, 25000), System.Guid.NewGuid().ToString());
 		MainScript.Map.Entity.Stickman entity = new MainScript.Map.Entity.Stickman(new Vector2(25000, 25000), 100f, Camera.main.GetComponent<MetaNetworkManager>().connectedClients[sender].account.username, uuid, new AI.Null());
+		//Camera.main.GetComponent<MainScript>().serverMap.entities.Add(entity.uuid, entity);
 		Camera.main.GetComponent<MainScript>().serverMap.entities.Add(uuid, entity);
 		Message message1 = Message.Create(MessageSendMode.Reliable, MessageId.SpawnEntity);
+		message1.AddString(uuid);
+		message1.AddByte(4);
 		message1.AddFloat(entity.Position.x);
 		message1.AddFloat(entity.Position.y);
+		message1.AddString(Camera.main.GetComponent<NetworkManager>().connectedClients[sender].username);
 		message1.AddBool(true);
-		message1.AddFloat(entity.Position.x);
-		message1.AddFloat(entity.Position.y);
 		Camera.main.GetComponent<NetworkManager>().Server.Send(message1, sender);
-		Camera.main.GetComponent<NetworkManager>().Server.Send(Message.Create(MessageSendMode.Reliable, MessageId.Join).AddByte(1), sender);
+		//Camera.main.GetComponent<NetworkManager>().Server.Send(Message.Create(MessageSendMode.Reliable, MessageId.Join).AddByte(1), sender);
 	}
 
 	[MessageHandler((ushort)MessageId.ChunkData)]
@@ -429,12 +431,12 @@ public class NetworkManager : MonoBehaviour {
 				break;
 			case 4:
 				new MainScript.Map.Entity.Stickman(new Vector2(message.GetFloat(), message.GetFloat()), message.GetString(), uuid).Visualize();
+				if (message.GetBool()) {
+					Camera.main.GetComponent<PlayerController>().Player = Camera.main.GetComponent<MainScript>().LoadedEntities[Camera.main.GetComponent<MetaNetworkManager>().localAccount.uuid];
+				}
 				break;
 			case 5:
 				new MainScript.Map.Entity.Airship(new Vector2(message.GetFloat(), message.GetFloat()), uuid).Visualize();
-				if (message.GetBool()) {
-					new MainScript.Map.Entity.Stickman(new Vector2(message.GetFloat(), message.GetFloat()), 0f, Camera.main.GetComponent<MetaNetworkManager>().localAccount.uuid, Camera.main.GetComponent<MetaNetworkManager>().localAccount.uuid, new AI.Null()).Visualize();
-				}
 				break;
 		}
 	}
