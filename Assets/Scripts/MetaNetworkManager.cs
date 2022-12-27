@@ -77,7 +77,7 @@ public class MetaNetworkManager : MonoBehaviour {
 		Version = 100,
 		RegisterAccount,
 		LoginAccount,
-		SessionID,
+		AccountData,
 		ChatMessage,
 	    ServerList,
 	    StartServer,
@@ -448,6 +448,23 @@ public class MetaNetworkManager : MonoBehaviour {
 		account.server = message.GetBool();
 		account.mailingList = message.GetBool();
 		return account;
+	}
+
+	[MessageHandler((ushort)MessageId.AccountData)]
+	private static void ProcessAccountDataRequest(ushort sender, Message message) {
+		int newSessionID = message.GetInt();
+		if (Camera.main.GetComponent<MetaNetworkManager>().sessionIDs.ContainsKey(newSessionID)) {
+			message.AddString(Camera.main.GetComponent<MetaNetworkManager>().connectedClients[Camera.main.GetComponent<MetaNetworkManager>().sessionIDs[newSessionID]].account.uuid);
+			message.AddString(Camera.main.GetComponent<MetaNetworkManager>().connectedClients[Camera.main.GetComponent<MetaNetworkManager>().sessionIDs[newSessionID]].account.username);
+			Camera.main.GetComponent<MetaNetworkManager>().Server.Send(message, sender);
+		}
+	}
+
+	[MessageHandler((ushort)MessageId.AccountData)]
+	private static void ProcessAccountData(Message message) {
+		ushort sender = message.GetUShort();
+		Camera.main.GetComponent<NetworkManager>().connectedClients[sender].uuid = message.GetString();
+		Camera.main.GetComponent<NetworkManager>().connectedClients[sender].username = message.GetString();
 	}
 
 	[MessageHandler((ushort)MessageId.RegisterAccount)]

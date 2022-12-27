@@ -14,6 +14,7 @@ using Unity.Collections;
 
 public class NetworkManager : MonoBehaviour {
 	public enum MessageId : ushort {
+		SessionID,
 		ChunkData,
 		Join,
         SpawnEntity,
@@ -208,6 +209,7 @@ public class NetworkManager : MonoBehaviour {
 	    MainScript.PrintMessage("Joined Server!");
 	    GameCanvas.SetActive(true);
 		GetComponent<MenuScript>().MessageSending.SetActive(true);
+		Client.Send(Message.Create(MessageSendMode.Reliable, MessageId.SessionID).AddInt(GetComponent<MetaNetworkManager>().sessionID));
 		GetComponent<MetaNetworkManager>().SendChatMessage(GetComponent<MetaNetworkManager>().localAccount.username + " has connected to server \"" + connectedServerName + " (" + connectedServerVersion + ")" + "\".");
     }
 
@@ -339,6 +341,11 @@ public class NetworkManager : MonoBehaviour {
 			default:
 				return new Color32(0, 0, 0, 255);
 	    }
+	}
+
+	[MessageHandler((ushort)MessageId.SessionID)]
+	private static void ProcessSessionId(ushort sender, Message message) {
+		Camera.main.GetComponent<MetaNetworkManager>().Client.Send(message.AddUShort(sender));
 	}
 
 	[MessageHandler((ushort)MessageId.Join)]
