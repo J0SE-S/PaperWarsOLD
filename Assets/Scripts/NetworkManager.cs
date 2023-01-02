@@ -101,7 +101,7 @@ public class NetworkManager : MonoBehaviour {
 
 	private void SaveMap() {
 	    if (Server.IsRunning) {
-			FileStream fs = new FileStream(Application.persistentDataPath + "/maps/" + GetComponent<MainScript>().serverMap.name + ".paperwars-map", FileMode.Create);
+			FileStream fs = new FileStream(Application.persistentDataPath + "/.maps/" + GetComponent<MainScript>().serverMap.name + ".paperwars-map", FileMode.Create);
 			BinaryFormatter formatter = new BinaryFormatter();
         	try {
             	formatter.Serialize(fs, GetComponent<MainScript>().serverMap);
@@ -115,7 +115,7 @@ public class NetworkManager : MonoBehaviour {
 	}
 
 	private void OnApplicationQuit() {
-        File.Delete(Application.persistentDataPath + "/temp" + GetComponent<NetworkManager>().port);
+        File.Delete(Application.persistentDataPath + "/.temp" + GetComponent<NetworkManager>().port);
     }
 
     private void FixedUpdate() {
@@ -137,9 +137,9 @@ public class NetworkManager : MonoBehaviour {
 			if (i == 51) {
 				Application.Quit();
 			}
-			if (!File.Exists(Application.persistentDataPath + "/temp" + (35724 + i))) {
+			if (!File.Exists(Application.persistentDataPath + "/.temp" + (35724 + i))) {
 				port = (ushort)(i + 35724);
-				File.Create(Application.persistentDataPath + "/temp" + (35724 + i));
+				File.Create(Application.persistentDataPath + "/.temp" + (35724 + i));
 				break;
 			}
 		}

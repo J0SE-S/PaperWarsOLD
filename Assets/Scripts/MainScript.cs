@@ -332,8 +332,8 @@ public class MainScript : MonoBehaviour {
     // Start is called before the first frame update
     void Start() {
 		settings = new Settings();
-		if (!Directory.Exists(Application.persistentDataPath + "/maps"))
-			Directory.CreateDirectory(Application.persistentDataPath + "/maps");
+		if (!Directory.Exists(Application.persistentDataPath + "/.maps"))
+			Directory.CreateDirectory(Application.persistentDataPath + "/.maps");
 		if (!File.Exists(Application.persistentDataPath + "/settings.json")) {
 			File.WriteAllText(Application.persistentDataPath+"/settings.json",JsonUtility.ToJson(settings));
 		} else {

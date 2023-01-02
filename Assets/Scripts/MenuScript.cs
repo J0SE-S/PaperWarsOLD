@@ -69,7 +69,7 @@ public class MenuScript : MonoBehaviour {
         GetComponent<NetworkManager>().Client.Disconnect();
 		GetComponent<MetaNetworkManager>().Server.Stop();
         GetComponent<MetaNetworkManager>().Client.Disconnect();
-		File.Delete(Application.persistentDataPath + "/temp" + GetComponent<NetworkManager>().port);
+		File.Delete(Application.persistentDataPath + "/.temp" + GetComponent<NetworkManager>().port);
 #if UNITY_EDITOR
 		UnityEditor.EditorApplication.isPlaying = false;
 #else
@@ -143,11 +143,11 @@ public class MenuScript : MonoBehaviour {
 		OfflineAccountAdminPanelPasswordField.onSubmit.RemoveAllListeners();
 		OfflineAccountAdminPanelBlacklisted.onValueChanged.RemoveAllListeners();
 		OfflineAccountAdminPanelServer.onValueChanged.RemoveAllListeners();
-		OfflineAccountAdminPanelEmailField.onSubmit.AddListener((string value) => {GetComponent<MetaNetworkManager>().unassignedAccounts[id].email = value;File.WriteAllText(Application.persistentDataPath + "/accounts/" + GetComponent<MetaNetworkManager>().unassignedAccounts[id].uuid + ".paperwars-account", JsonUtility.ToJson(GetComponent<MetaNetworkManager>().unassignedAccounts[id]));});
-		OfflineAccountAdminPanelUsernameField.onSubmit.AddListener((string value) => {GetComponent<MetaNetworkManager>().unassignedAccounts[id].username = value;File.WriteAllText(Application.persistentDataPath + "/accounts/" + GetComponent<MetaNetworkManager>().unassignedAccounts[id].uuid + ".paperwars-account", JsonUtility.ToJson(GetComponent<MetaNetworkManager>().unassignedAccounts[id]));});
-		OfflineAccountAdminPanelPasswordField.onSubmit.AddListener((string value) => {GetComponent<MetaNetworkManager>().unassignedAccounts[id].password = value;File.WriteAllText(Application.persistentDataPath + "/accounts/" + GetComponent<MetaNetworkManager>().unassignedAccounts[id].uuid + ".paperwars-account", JsonUtility.ToJson(GetComponent<MetaNetworkManager>().unassignedAccounts[id]));});
-		OfflineAccountAdminPanelBlacklisted.onValueChanged.AddListener((bool value) => {GetComponent<MetaNetworkManager>().unassignedAccounts[id].blacklisted = value;File.WriteAllText(Application.persistentDataPath + "/accounts/" + GetComponent<MetaNetworkManager>().unassignedAccounts[id].uuid + ".paperwars-account", JsonUtility.ToJson(GetComponent<MetaNetworkManager>().unassignedAccounts[id]));});
-		OfflineAccountAdminPanelServer.onValueChanged.AddListener((bool value) => {GetComponent<MetaNetworkManager>().unassignedAccounts[id].server = value;File.WriteAllText(Application.persistentDataPath + "/accounts/" + GetComponent<MetaNetworkManager>().unassignedAccounts[id].uuid + ".paperwars-account", JsonUtility.ToJson(GetComponent<MetaNetworkManager>().unassignedAccounts[id]));});
+		OfflineAccountAdminPanelEmailField.onSubmit.AddListener((string value) => {GetComponent<MetaNetworkManager>().unassignedAccounts[id].email = value;File.WriteAllText(Application.persistentDataPath + "/.accounts/" + GetComponent<MetaNetworkManager>().unassignedAccounts[id].uuid + ".paperwars-account", JsonUtility.ToJson(GetComponent<MetaNetworkManager>().unassignedAccounts[id]));});
+		OfflineAccountAdminPanelUsernameField.onSubmit.AddListener((string value) => {GetComponent<MetaNetworkManager>().unassignedAccounts[id].username = value;File.WriteAllText(Application.persistentDataPath + "/.accounts/" + GetComponent<MetaNetworkManager>().unassignedAccounts[id].uuid + ".paperwars-account", JsonUtility.ToJson(GetComponent<MetaNetworkManager>().unassignedAccounts[id]));});
+		OfflineAccountAdminPanelPasswordField.onSubmit.AddListener((string value) => {GetComponent<MetaNetworkManager>().unassignedAccounts[id].password = value;File.WriteAllText(Application.persistentDataPath + "/.accounts/" + GetComponent<MetaNetworkManager>().unassignedAccounts[id].uuid + ".paperwars-account", JsonUtility.ToJson(GetComponent<MetaNetworkManager>().unassignedAccounts[id]));});
+		OfflineAccountAdminPanelBlacklisted.onValueChanged.AddListener((bool value) => {GetComponent<MetaNetworkManager>().unassignedAccounts[id].blacklisted = value;File.WriteAllText(Application.persistentDataPath + "/.accounts/" + GetComponent<MetaNetworkManager>().unassignedAccounts[id].uuid + ".paperwars-account", JsonUtility.ToJson(GetComponent<MetaNetworkManager>().unassignedAccounts[id]));});
+		OfflineAccountAdminPanelServer.onValueChanged.AddListener((bool value) => {GetComponent<MetaNetworkManager>().unassignedAccounts[id].server = value;File.WriteAllText(Application.persistentDataPath + "/.accounts/" + GetComponent<MetaNetworkManager>().unassignedAccounts[id].uuid + ".paperwars-account", JsonUtility.ToJson(GetComponent<MetaNetworkManager>().unassignedAccounts[id]));});
 	}
 
     public void BackToMainMenu() {
@@ -168,7 +168,7 @@ public class MenuScript : MonoBehaviour {
 
     public void ExistingMap() {
 		HostServerCanvas.SetActive(false);
-		string[] paths = Directory.GetFiles(Application.persistentDataPath + "/maps");
+		string[] paths = Directory.GetFiles(Application.persistentDataPath + "/.maps");
 		LoadMapDropdown.options = new();
 		foreach (string path in paths) {
 			if (new FileInfo(path).Name.Contains(".paperwars-map")) {
@@ -205,7 +205,7 @@ public class MenuScript : MonoBehaviour {
 
 	public void LoadMapConfirm() {
 		LoadMapCanvas.SetActive(false);
-		LoadMapFromFile(Application.persistentDataPath + "/maps/" + LoadMapDropdown.options[LoadMapDropdown.value].text + ".paperwars-map");
+		LoadMapFromFile(Application.persistentDataPath + "/.maps/" + LoadMapDropdown.options[LoadMapDropdown.value].text + ".paperwars-map");
     }
 
     public void LoadMapFromFile(string path) {

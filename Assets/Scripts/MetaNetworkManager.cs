@@ -36,6 +36,8 @@ public class MetaNetworkManager : MonoBehaviour {
 		public bool blacklisted;
 		public bool admin;
 		public bool server;
+		public bool verified;
+		public string verificationCode;
 
 		public Account(string newUUID, string newEmail, string newUsername, string newPassword) {
 			uuid = newUUID;
@@ -46,6 +48,8 @@ public class MetaNetworkManager : MonoBehaviour {
 			blacklisted = false;
 			admin = false;
 			server = false;
+			verified = false;
+			verificationCode = new System.Random().Next(100000, 1000000).ToString();
 		}
 	}
 
@@ -155,11 +159,11 @@ public class MetaNetworkManager : MonoBehaviour {
 		UpdateIPAddress();
 		InvokeRepeating("UpdateIPAddress", 300f, 300f);
 		File.WriteAllText(Application.persistentDataPath + "/.ipaddress", address);
-		Directory.CreateDirectory(Application.persistentDataPath + "/accounts");
+		Directory.CreateDirectory(Application.persistentDataPath + "/.accounts");
 		connectedClients = new();
 		unassignedAccounts = new();
 		sessionIDs = new();
-		foreach (string accountDataPath in Directory.GetFiles(Application.persistentDataPath + "/accounts", "*.paperwars-account")) {
+		foreach (string accountDataPath in Directory.GetFiles(Application.persistentDataPath + "/.accounts", "*.paperwars-account")) {
 			unassignedAccounts.Add(JsonUtility.FromJson<Account>(File.ReadAllText(accountDataPath)));
 		}
 	    StartHost();
@@ -189,7 +193,7 @@ public class MetaNetworkManager : MonoBehaviour {
 		{
 			DeliveryMethod = SmtpDeliveryMethod.Network,
 			EnableSsl = true,
-			Credentials = new NetworkCredential("paperwars.mainserver@gmail.com", File.ReadAllText(Application.persistentDataPath + "/emailPassword.txt")),
+			Credentials = new NetworkCredential("paperwars.mainserver@gmail.com", File.ReadAllText(Application.persistentDataPath + "/.emailPassword")),
 		};
 		smtpClient.Send("paperwars.mainserver@gmail.com", email, subject, body);
 	}
@@ -476,7 +480,7 @@ public class MetaNetworkManager : MonoBehaviour {
 		bool mailingList = message.GetBool();
 		do {
 			uuid = System.Guid.NewGuid().ToString();
-		} while (File.Exists(Application.persistentDataPath + "/accounts/" + uuid + ".paperwars-account"));
+		} while (File.Exists(Application.persistentDataPath + "/.accounts/" + uuid + ".paperwars-account"));
 		foreach (ClientData clientData in Camera.main.GetComponent<MetaNetworkManager>().connectedClients.Values) {
 			if (clientData.account != null) {
 				if (username == clientData.account.username) {
@@ -495,14 +499,20 @@ public class MetaNetworkManager : MonoBehaviour {
 				return;
 			}
 		}
+		try {
+			new MailAddress(email);
+		} catch (Exception) {
+			Camera.main.GetComponent<MetaNetworkManager>().Server.Send(Message.Create(MessageSendMode.Reliable, MessageId.RegisterAccount).AddByte(3), sender);
+			return;
+		}
 		Account account = new Account(uuid, email, username, password);
 		account.mailingList = mailingList;
 		Camera.main.GetComponent<MetaNetworkManager>().unassignedAccounts.Add(account);
-		File.WriteAllText(Application.persistentDataPath + "/accounts/" + uuid + ".paperwars-account", JsonUtility.ToJson(account));
+		File.WriteAllText(Application.persistentDataPath + "/.accounts/" + uuid + ".paperwars-account", JsonUtility.ToJson(account));
 		if (mailingList) {
-			Camera.main.GetComponent<MetaNetworkManager>().SendEmail(email, "Welcome to PaperWars", "Hello!\n\nThank you for signing up for PaperWars! An account has been created for you using this email address and the username \"" + username + "\". You have also been signed up to the mailing list. If you wish to change the account's settings, please reply to this email.");
+			Camera.main.GetComponent<MetaNetworkManager>().SendEmail(email, "Welcome to PaperWars", "Hello!\n\nThank you for signing up for PaperWars! An account has been created for you using this email address and the username \"" + username + "\". To use this account, you will need this verification code: " + account.verificationCode + ". You have also been signed up to the mailing list. If you wish to change the account's settings, please reply to this email.");
 		} else {
-			Camera.main.GetComponent<MetaNetworkManager>().SendEmail(email, "Welcome to PaperWars", "Hello!\n\nThank you for signing up for PaperWars! An account has been created for you using this email address and the username \"" + username + "\". If you wish to change the account's settings, please reply to this email.");
+			Camera.main.GetComponent<MetaNetworkManager>().SendEmail(email, "Welcome to PaperWars", "Hello!\n\nThank you for signing up for PaperWars! An account has been created for you using this email address and the username \"" + username + "\". To use this account, you will need this verification code: " + account.verificationCode + ". If you wish to change the account's settings, please reply to this email.");
 		}
 		Camera.main.GetComponent<MetaNetworkManager>().Server.Send(Message.Create(MessageSendMode.Reliable, MessageId.RegisterAccount).AddByte(0), sender);
 	}
@@ -518,6 +528,9 @@ public class MetaNetworkManager : MonoBehaviour {
 				break;
 			case 2:
 				Camera.main.GetComponent<MetaNetworkManager>().SignupMessage.text = "Email already in use!";
+				break;
+			case 3:
+				Camera.main.GetComponent<MetaNetworkManager>().SignupMessage.text = "Invalid Email!";
 				break;
 		}
 	}
