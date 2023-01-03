@@ -81,6 +81,7 @@ public class MetaNetworkManager : MonoBehaviour {
 		Version = 100,
 		RegisterAccount,
 		LoginAccount,
+		VerifyAccount,
 		AccountData,
 		ChatMessage,
 	    ServerList,
@@ -111,11 +112,14 @@ public class MetaNetworkManager : MonoBehaviour {
     [SerializeField] private ushort maxPlayers;
 	[SerializeField] private bool JoinMainServer;
 	public GameObject LoginCanvas;
+	public GameObject VerificationCanvas;
 	public GameObject SignupCanvas;
 	public TMP_Text LoginMessage;
+	public TMP_Text VerificationMessage;
 	public TMP_Text SignupMessage;
 	public TMP_InputField LoginUsernameField;
 	public TMP_InputField LoginPasswordField;
+	public TMP_InputField VerificationField;
 	public TMP_InputField SignupEmailField;
 	public TMP_InputField SignupUsernameField;
 	public TMP_InputField SignupPasswordField;
@@ -366,6 +370,15 @@ public class MetaNetworkManager : MonoBehaviour {
 		LoginMessage.text = "";
 	}
 
+	public void Verify() {
+		if (VerificationField.text == "") {
+			VerificationMessage.text = "Please enter a verification code.";
+			return;
+		}
+		Client.Send(Message.Create(MessageSendMode.Reliable, MessageId.VerifyAccount).AddString(VerificationField.text));
+		VerificationMessage.text = "";
+	}
+
 	public void SignUp() {
 		if (SignupEmailField.text == "") {
 			SignupMessage.text = "Please enter an email.";
@@ -390,6 +403,10 @@ public class MetaNetworkManager : MonoBehaviour {
 		int newSessionID = new System.Random().Next();
 		foreach (Account account in Camera.main.GetComponent<MetaNetworkManager>().unassignedAccounts) {
 			if (username == account.username && password == account.password) {
+				if (!account.verified) {
+					Camera.main.GetComponent<MetaNetworkManager>().Server.Send(Message.Create(MessageSendMode.Reliable, MessageId.LoginAccount).AddByte(3), sender);
+					return;
+				}
 				Camera.main.GetComponent<MetaNetworkManager>().connectedClients[sender].account = account;
 				Camera.main.GetComponent<MetaNetworkManager>().Server.Send(AddAccount(Message.Create(MessageSendMode.Reliable, MessageId.LoginAccount).AddByte(0), account).AddInt(newSessionID), sender);
 				Camera.main.GetComponent<MetaNetworkManager>().unassignedAccounts.Remove(account);
@@ -432,7 +449,36 @@ public class MetaNetworkManager : MonoBehaviour {
 			case 2:
 				Camera.main.GetComponent<MetaNetworkManager>().LoginMessage.text = "Account already in use!";
 				break;
+			case 3:
+				Camera.main.GetComponent<MetaNetworkManager>().LoginCanvas.SetActive(false);
+				Camera.main.GetComponent<MetaNetworkManager>().LoginMessage.text = "";
+				Camera.main.GetComponent<MetaNetworkManager>().SignupMessage.text = "";
+				Camera.main.GetComponent<MetaNetworkManager>().VerificationCanvas.SetActive(true);
+				break;
 		}
+	}
+
+	[MessageHandler((ushort)MessageId.VerifyAccount)]
+	private static void ProcessAccountVerification(ushort sender, Message message) {
+		if (message.GetString().Equals()) {}
+	}
+
+	[MessageHandler((ushort)MessageId.VerifyAccount)]
+	private static void ProcessAccountVerification(Message message) {
+		Camera.main.GetComponent<MetaNetworkManager>().localAccount = GetAccount(message);
+		Camera.main.GetComponent<MetaNetworkManager>().sessionID = message.GetInt();
+		if (Camera.main.GetComponent<MetaNetworkManager>().localAccount.server) {
+			Camera.main.GetComponent<MenuScript>().HostServerButton.gameObject.SetActive(true);
+		}
+		if (Camera.main.GetComponent<MetaNetworkManager>().localAccount.admin) {
+			Camera.main.GetComponent<MetaNetworkManager>().AdminButton.SetActive(true);
+		}
+		Camera.main.GetComponent<MetaNetworkManager>().LoginCanvas.SetActive(false);
+		Camera.main.GetComponent<MenuScript>().MainMenuCanvas.SetActive(true);
+		Camera.main.GetComponent<MetaNetworkManager>().SendChatMessage(Camera.main.GetComponent<MetaNetworkManager>().localAccount.username + " has connected to the Main Server!");
+		Camera.main.GetComponent<MetaNetworkManager>().LoginMessage.text = "";
+		Camera.main.GetComponent<MetaNetworkManager>().SignupMessage.text = "";
+		Camera.main.GetComponent<MenuScript>().MessageSending.SetActive(true);
 	}
 
 	public static Message AddAccount(Message message, Account account) {
