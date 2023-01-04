@@ -10199,7 +10199,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 519420036}
         m_TargetAssemblyTypeName: MetaNetworkManager, Assembly-CSharp
-        m_MethodName: Login
+        m_MethodName: Verify
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

@@ -162,6 +162,7 @@ public class MetaNetworkManager : MonoBehaviour {
 #if UNITY_EDITOR
 		UpdateIPAddress();
 		InvokeRepeating("UpdateIPAddress", 300f, 300f);
+		InvokeRepeating("SaveAccounts", 30f, 30f);
 		File.WriteAllText(Application.persistentDataPath + "/.ipaddress", address);
 		Directory.CreateDirectory(Application.persistentDataPath + "/.accounts");
 		connectedClients = new();
@@ -200,6 +201,17 @@ public class MetaNetworkManager : MonoBehaviour {
 			Credentials = new NetworkCredential("paperwars.mainserver@gmail.com", File.ReadAllText(Application.persistentDataPath + "/.emailPassword")),
 		};
 		smtpClient.Send("paperwars.mainserver@gmail.com", email, subject, body);
+	}
+
+	public void SaveAccounts() {
+		foreach (Account account in unassignedAccounts) {
+			File.WriteAllText(Application.persistentDataPath + "/.accounts/" + account.uuid + ".paperwars-account", JsonUtility.ToJson(account));
+		}
+		foreach (ClientData data in connectedClients.Values) {
+			if (data.account != null) {
+				File.WriteAllText(Application.persistentDataPath + "/.accounts/" + data.account.uuid + ".paperwars-account", JsonUtility.ToJson(data.account));
+			}
+		}
 	}
 
 	private void UpdateIPAddress() {
@@ -330,7 +342,6 @@ public class MetaNetworkManager : MonoBehaviour {
 	}
 
     public void StartHost() {
-		connectedClients = new();
         Server.Start(port, maxPlayers);
     }
 
@@ -375,7 +386,7 @@ public class MetaNetworkManager : MonoBehaviour {
 			VerificationMessage.text = "Please enter a verification code.";
 			return;
 		}
-		Client.Send(Message.Create(MessageSendMode.Reliable, MessageId.VerifyAccount).AddString(VerificationField.text));
+		Client.Send(Message.Create(MessageSendMode.Reliable, MessageId.VerifyAccount).AddString(VerificationField.text).AddString(LoginUsernameField.text).AddString(LoginPasswordField.text));
 		VerificationMessage.text = "";
 	}
 
@@ -460,7 +471,20 @@ public class MetaNetworkManager : MonoBehaviour {
 
 	[MessageHandler((ushort)MessageId.VerifyAccount)]
 	private static void ProcessAccountVerification(ushort sender, Message message) {
-		if (message.GetString().Equals()) {}
+		string verificationCode = message.GetString();
+		string username = message.GetString();
+		string password = message.GetString();
+		int newSessionID = new System.Random().Next();
+		foreach (Account account in Camera.main.GetComponent<MetaNetworkManager>().unassignedAccounts) {
+			if (username == account.username && password == account.password && !account.verified && verificationCode == account.verificationCode) {
+				account.verified = true;
+				Camera.main.GetComponent<MetaNetworkManager>().connectedClients[sender].account = account;
+				Camera.main.GetComponent<MetaNetworkManager>().Server.Send(AddAccount(Message.Create(MessageSendMode.Reliable, MessageId.VerifyAccount), account).AddInt(newSessionID), sender);
+				Camera.main.GetComponent<MetaNetworkManager>().unassignedAccounts.Remove(account);
+				File.WriteAllText(Application.persistentDataPath + "/.accounts/" + account.uuid + ".paperwars-account", JsonUtility.ToJson(account));
+				return;
+			}
+		}
 	}
 
 	[MessageHandler((ushort)MessageId.VerifyAccount)]
@@ -473,7 +497,7 @@ public class MetaNetworkManager : MonoBehaviour {
 		if (Camera.main.GetComponent<MetaNetworkManager>().localAccount.admin) {
 			Camera.main.GetComponent<MetaNetworkManager>().AdminButton.SetActive(true);
 		}
-		Camera.main.GetComponent<MetaNetworkManager>().LoginCanvas.SetActive(false);
+		Camera.main.GetComponent<MetaNetworkManager>().VerificationCanvas.SetActive(false);
 		Camera.main.GetComponent<MenuScript>().MainMenuCanvas.SetActive(true);
 		Camera.main.GetComponent<MetaNetworkManager>().SendChatMessage(Camera.main.GetComponent<MetaNetworkManager>().localAccount.username + " has connected to the Main Server!");
 		Camera.main.GetComponent<MetaNetworkManager>().LoginMessage.text = "";
@@ -556,9 +580,9 @@ public class MetaNetworkManager : MonoBehaviour {
 		Camera.main.GetComponent<MetaNetworkManager>().unassignedAccounts.Add(account);
 		File.WriteAllText(Application.persistentDataPath + "/.accounts/" + uuid + ".paperwars-account", JsonUtility.ToJson(account));
 		if (mailingList) {
-			Camera.main.GetComponent<MetaNetworkManager>().SendEmail(email, "Welcome to PaperWars", "Hello!\n\nThank you for signing up for PaperWars! An account has been created for you using this email address and the username \"" + username + "\". To use this account, you will need this verification code: " + account.verificationCode + ". You have also been signed up to the mailing list. If you wish to change the account's settings, please reply to this email.");
+			Camera.main.GetComponent<MetaNetworkManager>().SendEmail(email, "Welcome to PaperWars", "Hello!\n\nThank you for signing up for PaperWars! An account has been created for you using this email address and the username \"" + username + "\". To use this account, you will need this verification code: " + account.verificationCode + ". You have also been signed up to the mailing list. If you wish to change the account's settings, you can reply to this email, or you can alter the settings from the game itself.");
 		} else {
-			Camera.main.GetComponent<MetaNetworkManager>().SendEmail(email, "Welcome to PaperWars", "Hello!\n\nThank you for signing up for PaperWars! An account has been created for you using this email address and the username \"" + username + "\". To use this account, you will need this verification code: " + account.verificationCode + ". If you wish to change the account's settings, please reply to this email.");
+			Camera.main.GetComponent<MetaNetworkManager>().SendEmail(email, "Welcome to PaperWars", "Hello!\n\nThank you for signing up for PaperWars! An account has been created for you using this email address and the username \"" + username + "\". To use this account, you will need this verification code: " + account.verificationCode + ". If you wish to change the account's settings, you can reply to this email, or you can alter the settings from the game itself.");
 		}
 		Camera.main.GetComponent<MetaNetworkManager>().Server.Send(Message.Create(MessageSendMode.Reliable, MessageId.RegisterAccount).AddByte(0), sender);
 	}
