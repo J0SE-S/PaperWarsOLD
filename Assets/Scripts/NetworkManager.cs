@@ -80,6 +80,7 @@ public class NetworkManager : MonoBehaviour {
     }
 
     public void Start2() {
+		Message.MaxPayloadSize = 2048;
 #if UNITY_EDITOR
 		RiptideLogger.Initialize(Debug.Log, Debug.Log, Debug.LogWarning, Debug.LogError, false);
 #endif
@@ -345,7 +346,8 @@ public class NetworkManager : MonoBehaviour {
 
 	[MessageHandler((ushort)MessageId.SessionID)]
 	private static void ProcessSessionId(ushort sender, Message message) {
-		Camera.main.GetComponent<MetaNetworkManager>().Client.Send(message.AddUShort(sender));
+		Message message1 = Message.Create(MessageSendMode.Reliable, MetaNetworkManager.MessageId.AccountData).AddInt(message.GetInt());
+		Camera.main.GetComponent<MetaNetworkManager>().Client.Send(message1.AddUShort(sender));
 	}
 
 	[MessageHandler((ushort)MessageId.Join)]
@@ -361,7 +363,7 @@ public class NetworkManager : MonoBehaviour {
 	[MessageHandler((ushort)MessageId.Join)]
 	private static void ProcessPlayerJoin(ushort sender, Message message) {
 		string uuid = Camera.main.GetComponent<NetworkManager>().connectedClients[sender].uuid;
-		//Debug.Log(uuid);
+		Debug.Log(uuid);
 		//MainScript.Map.Entity.Airship entity = new MainScript.Map.Entity.Airship(new Vector2(25000, 25000), System.Guid.NewGuid().ToString());
 		MainScript.Map.Entity.Stickman entity = new MainScript.Map.Entity.Stickman(new Vector2(25000, 25000), 100f, Camera.main.GetComponent<MetaNetworkManager>().connectedClients[sender].account.username, uuid, new AI.Null());
 		//Camera.main.GetComponent<MainScript>().serverMap.entities.Add(entity.uuid, entity);

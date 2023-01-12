@@ -418,6 +418,7 @@ public class MetaNetworkManager : MonoBehaviour {
 					Camera.main.GetComponent<MetaNetworkManager>().Server.Send(Message.Create(MessageSendMode.Reliable, MessageId.LoginAccount).AddByte(3), sender);
 					return;
 				}
+				Camera.main.GetComponent<MetaNetworkManager>().sessionIDs[newSessionID] = sender;
 				Camera.main.GetComponent<MetaNetworkManager>().connectedClients[sender].account = account;
 				Camera.main.GetComponent<MetaNetworkManager>().Server.Send(AddAccount(Message.Create(MessageSendMode.Reliable, MessageId.LoginAccount).AddByte(0), account).AddInt(newSessionID), sender);
 				Camera.main.GetComponent<MetaNetworkManager>().unassignedAccounts.Remove(account);
@@ -527,7 +528,11 @@ public class MetaNetworkManager : MonoBehaviour {
 	[MessageHandler((ushort)MessageId.AccountData)]
 	private static void ProcessAccountDataRequest(ushort sender, Message message) {
 		int newSessionID = message.GetInt();
+		Debug.Log(newSessionID);
+		Debug.Log(Camera.main.GetComponent<MetaNetworkManager>().sessionIDs.Count);
+		Debug.Log(Camera.main.GetComponent<MetaNetworkManager>().sessionIDs[0]);
 		if (Camera.main.GetComponent<MetaNetworkManager>().sessionIDs.ContainsKey(newSessionID)) {
+			Debug.Log("test2");
 			message.AddString(Camera.main.GetComponent<MetaNetworkManager>().connectedClients[Camera.main.GetComponent<MetaNetworkManager>().sessionIDs[newSessionID]].account.uuid);
 			message.AddString(Camera.main.GetComponent<MetaNetworkManager>().connectedClients[Camera.main.GetComponent<MetaNetworkManager>().sessionIDs[newSessionID]].account.username);
 			Camera.main.GetComponent<MetaNetworkManager>().Server.Send(message, sender);
@@ -536,6 +541,7 @@ public class MetaNetworkManager : MonoBehaviour {
 
 	[MessageHandler((ushort)MessageId.AccountData)]
 	private static void ProcessAccountData(Message message) {
+		Debug.Log("test3");
 		ushort sender = message.GetUShort();
 		Camera.main.GetComponent<NetworkManager>().connectedClients[sender].uuid = message.GetString();
 		Camera.main.GetComponent<NetworkManager>().connectedClients[sender].username = message.GetString();
