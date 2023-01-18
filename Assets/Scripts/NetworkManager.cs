@@ -134,6 +134,9 @@ public class NetworkManager : MonoBehaviour {
     }
 
     public void StartHost() {
+#if UNITY_EDITOR
+		port = 35723;
+#else
 		for (ushort i = 1; i <= 51; i++) {
 			if (i == 51) {
 				Application.Quit();
@@ -144,6 +147,7 @@ public class NetworkManager : MonoBehaviour {
 				break;
 			}
 		}
+#endif
 		StartCoroutine("StartHost2");
 	}
 
@@ -170,6 +174,7 @@ public class NetworkManager : MonoBehaviour {
 		GetComponent<MenuScript>().HostServerButton.interactable = false;
 		MainScript.PrintMessage("Server Started!");
 		connectedClients = new();
+		Server.Start(port, maxPlayers);
 		if (GetComponent<MainScript>().settings.joinServerOnHost) {
 			JoinGame("127.0.0.1", port);
 		} else {
@@ -179,8 +184,6 @@ public class NetworkManager : MonoBehaviour {
 		GetComponent<MenuScript>().newMapSeedField.interactable = true;
 		GetComponent<MenuScript>().createMapButton.interactable = true;
 		GetComponent<MenuScript>().newMapBackButton.interactable = true;
-		Server.Start(port, maxPlayers);
-		MainScript.PrintMessage("Server Started!");
 		string address;
 		try {
 			address = new WebClient().DownloadString("http://icanhazip.com").Replace("\r\n", "").Replace("\n", "").Replace("\r", "");
@@ -452,7 +455,9 @@ public class NetworkManager : MonoBehaviour {
 
 	[MessageHandler((ushort)MessageId.EntityMovement)]
 	private static void ProcessEntityMovement(ushort sender, Message message) {
-		//(Camera.main.GetComponent<MainScript>().serverMap.entities[Camera.main.GetComponent<NetworkManager>().playerEntities[sender]].ai as AI.Player).queuedActions.Enqueue(new AI.Player.PlayerAction(new Vector2(message.GetFloat(), message.GetFloat())));
+		var entity = Camera.main.GetComponent<MainScript>().serverMap.entities[Camera.main.GetComponent<NetworkManager>().connectedClients[sender].uuid].visualization;
+		entity.transform.position = new Vector3(message.GetFloat(), message.GetFloat(), entity.transform.position.z);
+		Debug.Log(entity.transform.position.x + ", " + entity.transform.position.y);
 	}
 
 	[MessageHandler((ushort)MessageId.PlaceBuilding)]
