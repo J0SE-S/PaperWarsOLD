@@ -530,6 +530,7 @@ public class MetaNetworkManager : MonoBehaviour {
 		int newSessionID = message.GetInt();
 		ushort sender1 = message.GetUShort();
 		if (Camera.main.GetComponent<MetaNetworkManager>().sessionIDs.ContainsKey(newSessionID)) {
+			message = Message.Create(MessageSendMode.Reliable, MessageId.AccountData);
 			message.AddUShort(sender1);
 			message.AddString(Camera.main.GetComponent<MetaNetworkManager>().connectedClients[Camera.main.GetComponent<MetaNetworkManager>().sessionIDs[newSessionID]].account.uuid);
 			message.AddString(Camera.main.GetComponent<MetaNetworkManager>().connectedClients[Camera.main.GetComponent<MetaNetworkManager>().sessionIDs[newSessionID]].account.username);

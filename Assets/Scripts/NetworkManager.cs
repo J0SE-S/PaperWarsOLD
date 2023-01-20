@@ -366,16 +366,17 @@ public class NetworkManager : MonoBehaviour {
 	[MessageHandler((ushort)MessageId.Join)]
 	private static void ProcessPlayerJoin(ushort sender, Message message) {
 		string uuid = Camera.main.GetComponent<NetworkManager>().connectedClients[sender].uuid;
-		Debug.Log(uuid);
-		//MainScript.Map.Entity.Airship entity = new MainScript.Map.Entity.Airship(new Vector2(25000, 25000), System.Guid.NewGuid().ToString());
-		MainScript.Map.Entity.Stickman entity = new MainScript.Map.Entity.Stickman(new Vector2(25000, 25000), 100f, Camera.main.GetComponent<MetaNetworkManager>().connectedClients[sender].account.username, uuid, new AI.Null());
-		//Camera.main.GetComponent<MainScript>().serverMap.entities.Add(entity.uuid, entity);
-		Camera.main.GetComponent<MainScript>().serverMap.entities.Add(uuid, entity);
+		var x = message.GetFloat();
+		var y = message.GetFloat();
+		MainScript.Map.Entity.Airship entity = new MainScript.Map.Entity.Airship(new Vector2(x, y), System.Guid.NewGuid().ToString());
+		MainScript.Map.Entity.Stickman entity1 = new MainScript.Map.Entity.Stickman(new Vector2(x, y), 100f, Camera.main.GetComponent<MetaNetworkManager>().connectedClients[sender].account.username, uuid, new AI.Null());
+		Camera.main.GetComponent<MainScript>().serverMap.entities.Add(entity.uuid, entity);
+		Camera.main.GetComponent<MainScript>().serverMap.entities.Add(uuid, entity1);
 		Message message1 = Message.Create(MessageSendMode.Reliable, MessageId.SpawnEntity);
 		message1.AddString(uuid);
 		message1.AddByte(4);
-		message1.AddFloat(entity.Position.x);
-		message1.AddFloat(entity.Position.y);
+		message1.AddFloat(entity1.Position.x);
+		message1.AddFloat(entity1.Position.y);
 		message1.AddString(Camera.main.GetComponent<NetworkManager>().connectedClients[sender].username);
 		message1.AddBool(true);
 		Camera.main.GetComponent<NetworkManager>().Server.Send(message1, sender);
@@ -455,9 +456,8 @@ public class NetworkManager : MonoBehaviour {
 
 	[MessageHandler((ushort)MessageId.EntityMovement)]
 	private static void ProcessEntityMovement(ushort sender, Message message) {
-		var entity = Camera.main.GetComponent<MainScript>().serverMap.entities[Camera.main.GetComponent<NetworkManager>().connectedClients[sender].uuid].visualization;
-		entity.transform.position = new Vector3(message.GetFloat(), message.GetFloat(), entity.transform.position.z);
-		Debug.Log(entity.transform.position.x + ", " + entity.transform.position.y);
+		var entity = Camera.main.GetComponent<MainScript>().serverMap.entities[Camera.main.GetComponent<NetworkManager>().connectedClients[sender].uuid];
+		entity.Position = new Vector3(message.GetFloat(), message.GetFloat(), entity.Position.z);
 	}
 
 	[MessageHandler((ushort)MessageId.PlaceBuilding)]
