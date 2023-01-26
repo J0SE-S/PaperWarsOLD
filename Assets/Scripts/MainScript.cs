@@ -258,6 +258,7 @@ public class MainScript : MonoBehaviour {
 		public string name;
 		private byte[] tiles;
 		public Dictionary<string, Entity> entities;
+		public float currentTime;
 
 		public Map(string newName) {
 			name = newName;
@@ -328,6 +329,10 @@ public class MainScript : MonoBehaviour {
 	public bool buildingPlacementMode;
 	public GameObject buildingPlacementBlueprint;
 	public byte buildingPlacementType;
+	public float currentTime;
+    private const float dayEndTime = 3600;
+    public Gradient dayNightColors;
+    public UnityEngine.Rendering.Universal.Light2D sky;
 
     // Start is called before the first frame update
     void Start() {
@@ -348,6 +353,8 @@ public class MainScript : MonoBehaviour {
     // Update is called once per frame
     void Update() {
         timer -= Time.deltaTime;
+		currentTime += Time.deltaTime;
+		sky.color = dayNightColors.Evaluate(currentTime / (dayEndTime));
 		if (Camera.main.ScreenToWorldPoint(Input.mousePosition).x >= 0 && Camera.main.ScreenToWorldPoint(Input.mousePosition).y >= 0 && Camera.main.ScreenToWorldPoint(Input.mousePosition).x <= 50000 && Camera.main.ScreenToWorldPoint(Input.mousePosition).y <= 50000) {
 			//Camera.main.ScreenToWorldPoint(Input.mousePosition).x;
 		}
@@ -379,6 +386,7 @@ public class MainScript : MonoBehaviour {
 			entity = pair.Value;
 			entity.ai.getAICurrentAction().Execute(ref entity);
 		}
+		serverMap.currentTime += Time.fixedDeltaTime;
 	}
 
 	public bool buildingInLegalPosition() {

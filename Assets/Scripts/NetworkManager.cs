@@ -162,13 +162,13 @@ public class NetworkManager : MonoBehaviour {
 					}
 				}
 				GetComponent<MainScript>().serverMap.LoadServerChunk(chunk, row, column);
-				yield return new WaitForSeconds(0.005f);
+				yield return new WaitForSeconds(0.0001f);
 			}
 		}
-		foreach (MainScript.Map.Entity entity in GetComponent<MainScript>().serverMap.entities.Values) {
+		/*foreach (MainScript.Map.Entity entity in GetComponent<MainScript>().serverMap.entities.Values) {
 			entity.ServerVisualize();
 			yield return new WaitForSeconds(0.002f);
-		}
+		}*/
 		hostedServerName = GetComponent<MainScript>().serverMap.name;
 		hostedServerVersion = GetComponent<MainScript>().currentVersion.ToString();
 		GetComponent<MenuScript>().HostServerButton.interactable = false;
@@ -235,6 +235,7 @@ public class NetworkManager : MonoBehaviour {
 		Message message1 = Message.Create(MessageSendMode.Reliable, MessageId.ChunkData);
     	message1.AddByte(0);
     	message1.AddByte(0);
+		message1.AddFloat(GetComponent<MainScript>().serverMap.currentTime);
     	for (int x = 0; x < 25; x++) {
         	for (int y = 0; y < 25; y++) {
     	    	message1.AddByte(GetComponent<MainScript>().serverMap.tileMap(x, y));
@@ -391,6 +392,7 @@ public class NetworkManager : MonoBehaviour {
 	    byte[,] chunk = new byte[25, 25];
 		if (row == 0 && column == 0) {
 			Camera.main.GetComponent<NetworkManager>().MinimapTexture = new Texture2D(1000, 1000);
+			Camera.main.GetComponent<MainScript>().currentTime = message.GetFloat();
 		}
 	    for (int x = 0; x < 25; x++) {
             for (int y = 0; y < 25; y++) {
