@@ -17,9 +17,10 @@ public class NetworkManager : MonoBehaviour {
 		SessionID,
 		ChunkData,
 		Join,
-        SpawnEntity,
+        //SpawnEntity,
         EntityMovement,
 		PlaceBuilding,
+		Sync,
 	    ChangeBlock
     }
 
@@ -27,13 +28,15 @@ public class NetworkManager : MonoBehaviour {
 		public string uuid;
 		public string username;
 		public Coroutine sendMap;
+		public Coroutine syncData;
 		public bool blacklisted;
 		public MainScript.Version version;
 
-		public ClientData(Coroutine newSendMap) {
+		public ClientData(Coroutine newSendMap, Coroutine newSyncData) {
 			uuid = "";
 			username = "";
 			sendMap = newSendMap;
+			syncData = newSyncData;
 			blacklisted = false;
 			version = null;
 		}
@@ -223,11 +226,14 @@ public class NetworkManager : MonoBehaviour {
 	}
 
     private void PlayerJoined(object sender, ServerConnectedEventArgs e) {
-		connectedClients.Add(e.Client.Id, new ClientData(StartCoroutine("SendMapData", e.Client.Id)));
+		connectedClients.Add(e.Client.Id, new ClientData(StartCoroutine("SendMapData", e.Client.Id), StartCoroutine("SyncData")));
 	}
 
 	private void PlayerLeft(object sender, ServerDisconnectedEventArgs e) {
 	    StopCoroutine(connectedClients[e.Client.Id].sendMap);
+		StopCoroutine(connectedClients[e.Client.Id].syncData);
+		Destroy(GetComponent<MainScript>().serverMap.entities[connectedClients[e.Client.Id].uuid].visualization);
+		GetComponent<MainScript>().serverMap.entities.Remove(connectedClients[e.Client.Id].uuid);
 		connectedClients.Remove(e.Client.Id);
 	}
 
@@ -247,24 +253,14 @@ public class NetworkManager : MonoBehaviour {
 			string type = entity.GetType().FullName;
 			message.AddString(entity.uuid);
 			switch (type) {
-				case "MainScript+Map+Entity+Tree":
-					message.AddByte(0);
-					message.AddFloat(entity.Position.x);
-					message.AddFloat(entity.Position.y);
-					break;
-				case "MainScript+Map+Entity+Flower":
-					message.AddByte((byte) (1 + (entity as MainScript.Map.Entity.Flower).color));
-					message.AddFloat(entity.Position.x);
-					message.AddFloat(entity.Position.y);
-					break;
 				case "MainScript+Map+Entity+Stickman":
-					message.AddByte(4);
+					message.AddByte(0);
 					message.AddFloat(entity.Position.x);
 					message.AddFloat(entity.Position.y);
 					message.AddString((entity as MainScript.Map.Entity.Stickman).displayName);
 					break;
 				case "MainScript+Map+Entity+Airship":
-					message.AddByte(5);
+					message.AddByte(1);
 					message.AddFloat(entity.Position.x);
 					message.AddFloat(entity.Position.y);
 					break;
@@ -276,6 +272,16 @@ public class NetworkManager : MonoBehaviour {
 			yield return new WaitForSeconds(0.01F);
 	    }
 		Server.Send(Message.Create(MessageSendMode.Reliable, MessageId.Join).AddByte(0), id);
+	}
+
+	public IEnumerator SyncData() {
+		Message message;
+		for (;;) {
+			yield return new WaitForSeconds(0.5f);
+			message = Message.Create(MessageSendMode.Unreliable, MessageId.Sync);
+			message.AddFloat(GetComponent<MainScript>().serverMap.currentTime);
+			Server.SendToAll(message);
+		}
 	}
 
     //private void OtherPlayerLeft(object sender, ClientDisconnectedEventArgs e) {}
@@ -352,6 +358,11 @@ public class NetworkManager : MonoBehaviour {
 	private static void ProcessSessionId(ushort sender, Message message) {
 		Message message1 = Message.Create(MessageSendMode.Reliable, MetaNetworkManager.MessageId.AccountData).AddInt(message.GetInt());
 		Camera.main.GetComponent<MetaNetworkManager>().Client.Send(message1.AddUShort(sender));
+	}
+
+	[MessageHandler((ushort)MessageId.Sync)]
+	private static void ProcessSyncedData(Message message) {
+		Camera.main.GetComponent<MainScript>().currentTime = message.GetFloat();
 	}
 
 	[MessageHandler((ushort)MessageId.Join)]
@@ -431,26 +442,18 @@ public class NetworkManager : MonoBehaviour {
 		Camera.main.GetComponent<NetworkManager>().Server.Send(message, sender);
 	}
 
-	[MessageHandler((ushort)MessageId.SpawnEntity)]
+	//[MessageHandler((ushort)MessageId.SpawnEntity)]
 	private static void ProcessEntityData(Message message) {
 		string uuid = message.GetString();
 		byte type = message.GetByte();
 		switch (type) {
 			case 0:
-				new MainScript.Map.Entity.Tree(new Vector2(message.GetFloat(), message.GetFloat()), uuid).Visualize();
-				break;
-			case 1:
-			case 2:
-			case 3:
-				new MainScript.Map.Entity.Flower(new Vector2(message.GetFloat(), message.GetFloat()), (byte)(type-1), uuid).Visualize();
-				break;
-			case 4:
 				new MainScript.Map.Entity.Stickman(new Vector2(message.GetFloat(), message.GetFloat()), message.GetString(), uuid).Visualize();
 				if (message.GetBool()) {
 					Camera.main.GetComponent<PlayerController>().Player = Camera.main.GetComponent<MainScript>().LoadedEntities[Camera.main.GetComponent<MetaNetworkManager>().localAccount.uuid];
 				}
 				break;
-			case 5:
+			case 1:
 				new MainScript.Map.Entity.Airship(new Vector2(message.GetFloat(), message.GetFloat()), uuid).Visualize();
 				break;
 		}

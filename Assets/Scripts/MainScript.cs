@@ -91,57 +91,19 @@ public class MainScript : MonoBehaviour {
 
     [Serializable]
     public class Map {
-		/*[Serializable]
-		public class Tile {
-	    	public byte type;
-	    	public bool impassable;
+		public class Placeable {
+			public enum PlaceableType {
+				TREE,
+				RED_FLOWER,
+				BLUE_FLOWER,
+				PURPLE_FLOWER
+			}
 
-	    	public Tile(byte newType, bool newImpassable = false) {
-				type = newType;
-				impassable = newImpassable;
-	    	}
-		}*/
+			public PlaceableType type;
+		}
 
 		[Serializable]
 		public abstract class Entity {
-			[Serializable]
-			public class Tree : Entity {
-				public Tree(Vector2 newPosition, string newUUID) {
-					position = new Vector3S(newPosition.x, newPosition.y, -0.1f);
-					uuid = newUUID;
-					ai = new AI.Null();
-				}
-
-				public override void Visualize() {
-					visualization = Instantiate(Camera.main.GetComponent<MainScript>().Entities[GetEntityType("tree")], new Vector3(position.x, position.y, position.z), new Quaternion(0, 0, 0, 1));
-					Camera.main.GetComponent<MainScript>().LoadedEntities.Add(uuid, visualization);
-				}
-
-				public override void ServerVisualize() {
-					visualization = Instantiate(Camera.main.GetComponent<MainScript>().ServerEntities[GetEntityType("tree")], new Vector3(position.x-50000, position.y, position.z), new Quaternion(0, 0, 0, 1));
-					Camera.main.GetComponent<MainScript>().ServerLoadedEntities.Add(uuid, visualization);
-				}
-			}
-
-			[Serializable]
-			public class Flower : Entity {
-				public byte color;
-
-				public Flower(Vector2 newPosition, byte newColor, string newUUID) {
-					position = new Vector3S(newPosition.x, newPosition.y, 0.1f);
-					color = newColor;
-					uuid = newUUID;
-					ai = new AI.Null();
-				}
-
-				public override void Visualize() {
-					visualization = Instantiate(Camera.main.GetComponent<MainScript>().Entities[GetEntityType("flower")+color], new Vector3(position.x, position.y, position.z), new Quaternion(0, 0, 0, 1));
-					Camera.main.GetComponent<MainScript>().LoadedEntities.Add(uuid, visualization);
-				}
-
-				public override void ServerVisualize() {}
-			}
-
 			[Serializable]
 			public class Stickman : Entity, IHealth {
 				public float Health {get; set;}
@@ -241,14 +203,10 @@ public class MainScript : MonoBehaviour {
 
 			public static int GetEntityType(string name) {
 				switch(name.ToLower()) {
-					case "tree":
-						return 0;
-					case "flower":
-						return 1;
 					case "stickman":
-						return 4;
+						return 0;
 					case "airship":
-						return 5;
+						return 1;
 					default:
 						return 255;
 				}
@@ -257,24 +215,28 @@ public class MainScript : MonoBehaviour {
 
 		public string name;
 		private byte[] tiles;
+		public Placeable[] placeables;
 		public Dictionary<string, Entity> entities;
 		public float currentTime;
 
 		public Map(string newName) {
 			name = newName;
 			tiles = new byte[1000000];
+			placeables = new Placeable[25000000];
 			entities = new();
 		}
 
 		public Map(string newName, byte[] newTiles) {
 			name = newName;
 			tiles = newTiles;
+			placeables = new Placeable[25000000];
 			entities = new();
 		}
 
 		public Map(string newName, byte[] newTiles, Dictionary<string, Entity> newEntities) {
 			name = newName;
 			tiles = newTiles;
+			placeables = new Placeable[25000000];
 			entities = newEntities;
 		}
 
@@ -287,6 +249,18 @@ public class MainScript : MonoBehaviour {
 		}
 
 		public byte[] tileMap() {
+			return tiles;
+		}
+
+		public byte placeableTileMap(int x, int y) {
+			return placeables[x + (y * 5000)];
+		}
+
+		public void placeableTileMap(int x, int y, byte tile) {
+			placeables[x + (y * 5000)] = tile;
+		}
+
+		public byte[] placeableTileMap() {
 			return tiles;
 		}
 
@@ -307,6 +281,8 @@ public class MainScript : MonoBehaviour {
     public Settings settings;
     public Tilemap solidTilemap;
     public Tilemap nonSolidTilemap;
+	public Tilemap placeableSolidTilemap;
+    public Tilemap placeableNonSolidTilemap;
 	public Tilemap serverTilemap;
     public UnityEngine.Tilemaps.Tile[] tiles;
     public GameObject[] Entities;
